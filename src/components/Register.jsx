@@ -6,6 +6,7 @@ import { TbLockPassword } from "react-icons/tb";
 import { IoPerson } from "react-icons/io5";
 import { Link } from "react-router-dom";
 
+
 function Register() {
 
   const [name, setName] = React.useState("");
@@ -37,6 +38,10 @@ function Register() {
     }
     const reqbody = { name, email, password };
     console.warn(reqbody);
+    setName("");
+    setEmail("");
+    setPassword("");
+    setErrors({});
   };
 
 
@@ -47,7 +52,7 @@ function Register() {
         <div className="flex flex-col loginColor text-white p-10 items-center justify-center text-center">
           <h1 className="font-bold text-3xl mb-6">Welcome Back!</h1>
           <p className="text-lg">
-            Get ready to challenge yourself with realistic mock tests, track your performance, and improve your exam strategies.
+            Prepare for your next coding assessment with realistic mock tests. Practice, track your progress, and ace your interviews!
           </p>
 
           {/* Sign-up Button */}
