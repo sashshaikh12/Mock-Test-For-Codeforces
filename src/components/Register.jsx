@@ -38,6 +38,19 @@ function Register() {
     }
     const reqbody = { name, email, password };
     console.warn(reqbody);
+
+    const response = await fetch("http://localhost:5000/register", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(reqbody),
+    });
+
+    const data = await response.json();
+    console.warn(data);
+    // navigate("/home");
+
     setName("");
     setEmail("");
     setPassword("");
