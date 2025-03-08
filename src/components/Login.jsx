@@ -2,6 +2,7 @@ import React from "react";
 import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
+import { Link } from "react-router-dom";
 
 function Login() {
   return (
@@ -36,18 +37,20 @@ function Login() {
           </div>
 
           <button className="w-72 mt-6 bg-teal-500 text-white rounded-full p-3 hover:bg-teal-600 transition hover:cursor-pointer">
-            Sign in
+            SIGN IN
           </button>
         </div>
 
         {/* Right Side - Sign Up Prompt */}
         <div className="flex flex-col loginColor text-white">
           <div className="flex flex-col items-center justify-center h-full text-center px-8">
-            <h1 className="font-bold text-3xl mb-4">Hello, Coder!</h1>
+            <h1 className="font-bold text-3xl mb-6">Hello, Coder!</h1>
             <p className="text-lg">Get ready for your next challenge—log in and take a mock test to sharpen your skills.</p>
-            <button className="w-48 mt-6 border border-white rounded-full p-3 hover:bg-white hover:text-teal-600 transition hover:cursor-pointer">
-              Sign up
-            </button>
+            <Link to="/register">
+              <button className="w-48 mt-6 border border-white rounded-full p-3 hover:bg-white hover:text-teal-600 transition hover:cursor-pointer">
+                SIGN UP
+              </button>
+            </Link>
           </div>
         </div>
       </div>
