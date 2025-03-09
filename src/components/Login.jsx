@@ -1,10 +1,37 @@
-import React from "react";
+import React, { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
 import { Link } from "react-router-dom";
 
 function Login() {
+
+  const [email, setEmail] = React.useState("");
+  const [password, setPassword] = React.useState("");
+  const navigate = useNavigate();
+
+  const handlelogin = async () => {
+    
+    let result = await fetch("http://localhost:5000/login", {
+      method: "post",
+      body: JSON.stringify({
+        email,
+        password,
+      }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    
+    if (result.status === 200) {
+      navigate("/home");
+    } else {
+      alert("Invalid Credentials");
+    }
+  };
+
+
   return (
     <div className="h-screen">
       <div className="grid grid-cols-[1.4fr_1fr] gap-4 h-full">
@@ -23,6 +50,8 @@ function Login() {
             <input
               type="text"
               placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               className="border border-gray-300 rounded-lg p-3 pl-10 w-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
             />
           </div>
@@ -32,11 +61,13 @@ function Login() {
             <input
               type="password"
               placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="border border-gray-300 rounded-lg p-3 pl-10 w-full bg-gray-100 focus:outline-none focus:ring-2 focus:ring-teal-400"
             />
           </div>
 
-          <button className="w-72 mt-6 bg-teal-500 text-white rounded-full p-3 hover:bg-teal-600 transition hover:cursor-pointer">
+          <button onClick={handlelogin} className="w-72 mt-6 bg-teal-500 text-white rounded-full p-3 hover:bg-teal-600 transition hover:cursor-pointer">
             SIGN IN
           </button>
         </div>

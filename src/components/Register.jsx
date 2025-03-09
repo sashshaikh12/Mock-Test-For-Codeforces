@@ -37,7 +37,6 @@ function Register() {
       return;
     }
     const reqbody = { name, email, password };
-    console.warn(reqbody);
 
     const response = await fetch("http://localhost:5000/register", {
       method: "POST",

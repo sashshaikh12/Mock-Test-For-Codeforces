@@ -32,6 +32,31 @@ app.post('/register', async (req, res) => {
 }
 );
 
+app.post('/login', async (req, res) => {
+  try{
+    const { email, password } = req.body;
+    const user = await User.findOne({ email});  //find user with the email  
+    if(user){
+      bcrypt.compare(password, user.password, (err, result) => {
+        if(err){
+          res.status(500).json({message: "Server Could not compare password"});
+        }
+        if(result){
+          res.status(200).json({message: "Login Successful"});
+        }else{
+          res.status(400).json({message: "Invalid Credentials"});
+        }
+      });
+    }
+    else{
+      res.status(404).json({message: "User not found"});
+    }
+  }catch(error){
+    res.status(500).json({message: "Server Could not login"});
+  }
+}
+);
+
 
 app.listen(5000, () => {
 connectDB();
