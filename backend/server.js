@@ -4,14 +4,22 @@ import dotenv from 'dotenv';
 import {connectDB} from './config/db.js';
 import User from './models/user.model.js';
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import cookieParser from 'cookie-parser';
+
 
 const app = express();
 
 app.use(express.json());
-app.use(cors());
+app.use(cookieParser());
+app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 dotenv.config({ path: '../.env' });
 
+
+
+
 const saltRounds = 10;
+
 
 app.post('/register', async (req, res) => {
   try{
@@ -21,10 +29,23 @@ app.post('/register', async (req, res) => {
 
     bcrypt.hash(password, saltRounds, async (err, hash) => {
       if(err){
-        res.status(500).json({message: "Server Could not hash password"});
+        return res.status(500).json({message: "Server Could not hash password"});
       }
       const user = await User.create({ name, email, password: hash });
-      res.status(201).json(user);
+
+      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+        expiresIn: '1d',
+      });
+
+      res.cookie('token', token, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge: 1 * 24 * 60 * 60 * 1000
+      });
+
+      return res.json({message: "User registered"});
+
     });
   }catch(error){
     res.status(500).json({message: "Server Could not register"});
@@ -39,10 +60,23 @@ app.post('/login', async (req, res) => {
     if(user){
       bcrypt.compare(password, user.password, (err, result) => {
         if(err){
-          res.status(500).json({message: "Server Could not compare password"});
+          return res.status(500).json({message: "Server Could not compare password"});
         }
         if(result){
-          res.status(200).json({message: "Login Successful"});
+
+          const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+            expiresIn: '1d',
+          });
+    
+          res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+            maxAge: 1 * 24 * 60 * 60 * 1000
+          });
+
+          return res.status(200).json({message: "Logged in"});
+
         }else{
           res.status(400).json({message: "Invalid Credentials"});
         }
@@ -56,6 +90,21 @@ app.post('/login', async (req, res) => {
   }
 }
 );
+
+app.post('/logout', (req, res) => {
+  try{
+    res.clearCookie('token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+    });
+
+    return res.json({message: "Logged out"});
+
+  }catch(error){
+    res.status(500).json({message: "Server Could not logout"}); 
+}
+});
 
 
 app.listen(5000, () => {
