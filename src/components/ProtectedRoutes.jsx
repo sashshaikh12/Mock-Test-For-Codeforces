@@ -1,3 +1,4 @@
+import React from "react";
 import {useEffect} from "react";
 import { Navigate, useNavigate} from "react-router-dom";
 
@@ -5,6 +6,7 @@ import { Navigate, useNavigate} from "react-router-dom";
 export const ProtectedRoutes = ({children}) => {
 
     const navigate = useNavigate();
+    const [auth, setAuth] = React.useState(false);
     
     useEffect(() => {
         const checkUser = async () => {
@@ -15,13 +17,17 @@ export const ProtectedRoutes = ({children}) => {
           result = await result.json();
           
 
-          if (result.status !== 200) {
-            <Navigate to="/" />
+          if (result.status === 200) {
+            setAuth(true);
+          }
+          else
+          {
+            setAuth(false);
           }
         };
         checkUser();
       }
       , []);
 
-      return children;
+      return auth ? children : <Navigate to="/" />;
 };
