@@ -6,6 +6,7 @@ import User from './models/user.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
+import userAuth from './middleware/userAuth.js';
 
 
 const app = express();
@@ -14,9 +15,6 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 dotenv.config({ path: '../.env' });
-
-
-
 
 const saltRounds = 10;
 
@@ -106,6 +104,28 @@ app.post('/logout', (req, res) => {
 }
 });
 
+app.post('/is-auth', userAuth, (req, res) => {
+  try{
+    return res.json({message: "Authenticated"});
+  }catch(error){
+    res.status(500).json({message: "Server Could not authenticate"}); 
+}
+});
+
+app.get('/user-data', userAuth, async (req, res) => {
+  try{
+    const user = await User.findById(req.body.userId);
+    if(!user)
+    {
+      return res.status(404).json({message: "User not found"});
+    }
+    const {name, email} = user;
+    return res.json({name, email});
+  }catch(error){
+    res.status(500).json({message: "Server Could not get user data"});
+  }
+}
+);
 
 app.listen(5000, () => {
 connectDB();
