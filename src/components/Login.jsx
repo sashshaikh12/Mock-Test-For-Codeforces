@@ -1,9 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
 import { Link } from "react-router-dom";
+
 
 function Login() {
 
@@ -11,10 +12,12 @@ function Login() {
   const [password, setPassword] = React.useState("");
   const navigate = useNavigate();
 
+
   const handlelogin = async () => {
     
     let result = await fetch("http://localhost:5000/login", {
       method: "post",
+      credentials: "include",
       body: JSON.stringify({
         email,
         password,

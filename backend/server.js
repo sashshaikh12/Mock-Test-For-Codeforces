@@ -23,6 +23,14 @@ app.post('/register', async (req, res) => {
   try{
     const { name, email, password } = req.body;
 
+    const user = await User.findOne({ email });
+    console.log(user);
+
+    if(user) 
+    {
+      return res.status(400).json({message: "User already exists"});
+    }
+
     //password hashing:
 
     bcrypt.hash(password, saltRounds, async (err, hash) => {
@@ -32,17 +40,17 @@ app.post('/register', async (req, res) => {
       const user = await User.create({ name, email, password: hash });
 
       const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: '1d',
+        expiresIn: '30d',
       });
 
       res.cookie('token', token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === 'production',
         sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        maxAge: 1 * 24 * 60 * 60 * 1000
+        maxAge: 30 * 24 * 60 * 60 * 1000
       });
 
-      return res.json({message: "User registered"});
+      return res.status(200).json({message: "User registered"});
 
     });
   }catch(error){
@@ -63,14 +71,14 @@ app.post('/login', async (req, res) => {
         if(result){
 
           const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-            expiresIn: '1d',
+            expiresIn: '30d',
           });
     
           res.cookie('token', token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-            maxAge: 1 * 24 * 60 * 60 * 1000
+            maxAge: 30 * 24 * 60 * 60 * 1000
           });
 
           return res.status(200).json({message: "Logged in"});
@@ -106,7 +114,7 @@ app.post('/logout', (req, res) => {
 
 app.post('/is-auth', userAuth, (req, res) => {
   try{
-    return res.json({message: "Authenticated"});
+    return res.status(200).json({message: "Authenticated"});
   }catch(error){
     res.status(500).json({message: "Server Could not authenticate"}); 
 }
@@ -120,7 +128,7 @@ app.get('/user-data', userAuth, async (req, res) => {
       return res.status(404).json({message: "User not found"});
     }
     const {name, email} = user;
-    return res.json({name, email});
+    return res.status(200).json({name, email});
   }catch(error){
     res.status(500).json({message: "Server Could not get user data"});
   }

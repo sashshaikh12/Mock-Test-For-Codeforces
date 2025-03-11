@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
@@ -14,6 +14,7 @@ function Register() {
   const [password, setPassword] = React.useState("");
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
+
 
   const validate = () => {
     const newErrors = {};
@@ -40,6 +41,7 @@ function Register() {
 
     const response = await fetch("http://localhost:5000/register", {
       method: "POST",
+      credentials: "include",
       headers: {
         "Content-Type": "application/json",
       },
@@ -49,6 +51,16 @@ function Register() {
     const data = await response.json();
     console.warn(data);
     // navigate("/home");
+
+    if (response.status === 200) {
+      navigate("/home");
+    }
+    else if(response.status === 400){
+      alert("User already exists");
+    }
+    else{
+      alert("Server Could not register");
+    }
 
     setName("");
     setEmail("");
