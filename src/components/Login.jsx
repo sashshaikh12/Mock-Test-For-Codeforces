@@ -1,5 +1,5 @@
 import React, { useEffect, useContext } from "react";
-import { useNavigate } from "react-router-dom";
+import { replace, useNavigate } from "react-router-dom";
 import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
@@ -11,6 +11,21 @@ function Login() {
   const [email, setEmail] = React.useState("");
   const [password, setPassword] = React.useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const checkUser = async () => {
+      let result = await fetch("http://localhost:5000/is-auth", {
+        method: "post",
+        credentials: "include",
+      });
+  
+      if (result.status === 200) {
+        navigate("/home", { replace: true }); // Redirect logged-in users to home
+      }
+    };
+    checkUser();
+  }, []);
+  
 
 
   const handlelogin = async () => {
@@ -26,9 +41,12 @@ function Login() {
         "Content-Type": "application/json",
       },
     });
+
+
+    console.log(result)
     
     if (result.status === 200) {
-      navigate("/home");
+      navigate("/home", { replace: true });
     } else {
       alert("Invalid Credentials");
     }

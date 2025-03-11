@@ -15,6 +15,21 @@ function Register() {
   const [errors, setErrors] = useState({});
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const checkUser = async () => {
+      let result = await fetch("http://localhost:5000/is-auth", {
+        method: "post",
+        credentials: "include",
+      });
+  
+      if (result.status === 200) {
+        navigate("/home", { replace: true }); // Redirect logged-in users to home
+      }
+    };
+    checkUser();
+  }, []);
+  
+
 
   const validate = () => {
     const newErrors = {};
@@ -53,7 +68,7 @@ function Register() {
     // navigate("/home");
 
     if (response.status === 200) {
-      navigate("/home");
+      navigate("/home", { replace: true });
     }
     else if(response.status === 400){
       alert("User already exists");
