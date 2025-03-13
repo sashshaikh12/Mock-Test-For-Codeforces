@@ -4,6 +4,8 @@ import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
 import { Link } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import {jwtDecode} from "jwt-decode";
 
 
 function Login() {
@@ -52,6 +54,31 @@ function Login() {
     }
   };
 
+  const onSuccess = async (res) => {
+    console.log("Successfully logged in", res);
+    const decoded = jwtDecode(res.credential);
+    console.log(decoded);
+  
+    let serverResponse = await fetch("http://localhost:5000/google-login", {
+      method: "POST",
+      credentials: "include",  // Important: Allows cookies to be set
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token: res.credential }),
+    });
+  
+    if (serverResponse.status === 200) {
+      navigate("/home", { replace: true });
+    } else {
+      alert("Google login failed");
+    }
+  };
+
+  const onFailure = (res) => {
+    alert("Login failed");
+  };
+
 
   return (
     <div className="h-screen">
@@ -61,10 +88,21 @@ function Login() {
           <h1 className="font-bold text-5xl">Welcome Back</h1>
           <p className="mb-8 mt-3 text-gray-600">Log in to take a mock test and track your progress.</p>
 
-          <button className="flex items-center space-x-4 border border-gray-300 p-3 hover:bg-gray-100 rounded-2xl mb-5 hover:cursor-pointer">
+          {/* <button className="flex items-center space-x-4 border border-gray-300 p-3 hover:bg-gray-100 rounded-2xl mb-5 hover:cursor-pointer">
             <FcGoogle />
             <span>Sign in with Google</span>
-          </button>
+          </button> */}
+          <div className="flex items-center space-x-4 mb-5 hover:cursor-pointer">
+            <GoogleLogin 
+              onSuccess={onSuccess}
+              onFailure={onFailure}
+              text="Sign in with Google"
+              shape="pill"
+              size="large"
+              auto_select = "true"
+            />
+          </div>
+
 
           <div className="relative w-72">
             <MdOutlineEmail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />

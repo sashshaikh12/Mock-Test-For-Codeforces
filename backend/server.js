@@ -7,6 +7,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import userAuth from './middleware/userAuth.js';
+import { OAuth2Client } from 'google-auth-library';
 
 
 const app = express();
@@ -17,6 +18,8 @@ app.use(cors({credentials: true, origin: 'http://localhost:5173'}));
 dotenv.config({ path: '../.env' });
 
 const saltRounds = 10;
+
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 
 app.post('/register', async (req, res) => {
@@ -134,6 +137,42 @@ app.get('/user-data', userAuth, async (req, res) => {
   }
 }
 );
+
+app.post("/google-login", async (req, res) => {
+  const { token } = req.body;
+
+  try {
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    // console.log("Google User Verified:", payload);
+
+    // Generate a session JWT token
+    const sessionToken = jwt.sign(
+      { id: payload.sub },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+
+    // Set token in HTTP-only cookie
+    res.cookie("token", sessionToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    res.status(200).json({ message: "Login successful" });
+  } catch (error) {
+    console.error("Google Auth Error:", error);
+    res.status(401).json({ message: "Invalid Google token" });
+  }
+});
+
 
 app.listen(5000, () => {
 connectDB();
