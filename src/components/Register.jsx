@@ -90,11 +90,11 @@ function Register() {
       },
       body: JSON.stringify({ token: res.credential }),
     });
-
+  
     if (serverResponse.status === 200) {
       navigate("/home", { replace: true });
     } else {
-      alert("Google Registration failed");
+      alert("Google login failed");
     }
   };
 

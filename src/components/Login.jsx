@@ -59,7 +59,7 @@ function Login() {
       },
       body: JSON.stringify({ token: res.credential }),
     });
-
+  
     if (serverResponse.status === 200) {
       navigate("/home", { replace: true });
     } else {
