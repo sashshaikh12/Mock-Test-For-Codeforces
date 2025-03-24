@@ -21,7 +21,7 @@ function Navbar() {
       </Link>
 
       {/* Desktop Navigation Links */}
-      <ul className="nav hidden lg:flex flex-1 justify-center items-center space-x-6">
+      <ul className="nav hidden lg:flex flex-1 justify-center items-center space-x-6 gap-4">
         <Link to="/home">
           <li className="p-3 hover:bg-teal-700 hover:rounded-xl hover:cursor-pointer text-lg font-semibold transition-all">
             Practice

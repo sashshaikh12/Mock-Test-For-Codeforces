@@ -16,7 +16,7 @@ function PerformanceSum() {
           
           {/* Stats Section */}
           <div className="space-y-8">
-            <h1 className="text-4xl font-bold text-teal-800 mb-6">
+            <h1 className="text-4xl font-bold text-teal-800 mb-10">
               Performance Analysis
             </h1>
             
@@ -67,7 +67,7 @@ function PerformanceSum() {
               </li>
             </ul>
             
-            <button className="mt-6 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 hover:cursor-pointer">
+            <button className="mt-6 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md transition duration-300 hover:cursor-pointer">
               View Detailed Analytics
             </button>
           </div>

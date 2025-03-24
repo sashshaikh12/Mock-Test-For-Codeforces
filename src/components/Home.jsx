@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Navbar from "./Navbar";
 import PerformanceSum from "./PerformanceSum";
+import MockTest from "./MockTest";
+import Challenges from "./Challenges";
+import Feedback from "./Feedback";
 
 function Home() {
   const navigate = useNavigate();
@@ -56,11 +59,14 @@ function Home() {
         <h3 className="text-xl px-4">
           Time to sharpen your skills and conquer new challenges! 🚀
         </h3>
-        <button className="bg-teal-600 text-white font-semibold text-lg mt-5 py-3 px-8 rounded-lg hover:bg-teal-700 transition-all transform hover:scale-105 shadow-lg hover:cursor-pointer">
+        <button className="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg mt-5 py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:cursor-pointer">
           Start Mock Test
         </button>
       </div>
       <PerformanceSum />
+      <MockTest />
+      <Challenges />
+      <Feedback />
     </div>
   );
 }
