@@ -26,7 +26,7 @@ function MockTestSetup() {
 
           {/* Verification URL Display */}
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">Verification Problem:</h3>
+            <h3 className="font-medium text-blue-800 mb-2">Verification Steps:</h3>
             <div className="flex items-center gap-2 mb-3">
               <span className="text-blue-600 break-all">
                 Problem link will be given here:
@@ -128,15 +128,15 @@ function MockTestSetup() {
             </li>
             <li className="flex items-start">
               <span className="text-teal-500 mr-2">•</span>
-              <span>Session ends when all problems are solved or time expires</span>
+              <span>The mock assessment session will end when you have successfully submitted a correct answer for each question, the allotted time has expired, or you end the session manually.</span>
             </li>
             <li className="flex items-start">
               <span className="text-teal-500 mr-2">•</span>
-              <span>Use online IDEs recommended for transparency</span>
+              <span>You can use a local IDE, but AI-generated solutions or predefined templates are not allowed.</span>
             </li>
             <li className="flex items-start">
               <span className="text-teal-500 mr-2">•</span>
-              <span>You must solve problems in the order they appear</span>
+              <span>It’s recommended to use online IDEs like CodeChef IDE for a seamless experience.</span>
             </li>
             <li className="flex items-start">
               <span className="text-teal-500 mr-2">•</span>
@@ -148,7 +148,11 @@ function MockTestSetup() {
             </li>
             <li className="flex items-start">
               <span className="text-teal-500 mr-2">•</span>
-              <span>Results will be saved to your dashboard</span>
+              <span>Wrong submissions don't incur penalties</span>
+            </li>
+            <li className="flex items-start">
+              <span className="text-teal-500 mr-2">•</span>
+              <span>Once completed, you will receive your final score and analysis based on your performance.</span>
             </li>
           </ul>
         </div>
