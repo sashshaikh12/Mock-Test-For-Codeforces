@@ -1,6 +1,39 @@
-import React from "react";
+import {React, useState, useEffect} from "react";
+import { useNavigate } from "react-router-dom";
 
 function Challenges() {
+
+    const navigate = useNavigate();
+
+    const [DailyProblem, setDailyProblem] = useState("");
+    const [DailyProblemRating, setDailyProblemRating] = useState(0);
+    const [ContestID, setContestID] = useState(0);
+    const [index, setIndex] = useState("");
+
+    useEffect(() => {
+        const fetchRandomProblem = async () => {
+          let result = await fetch("http://localhost:5000/daily-question", {
+            method: "get",
+            credentials: "include",
+          });
+          result = await result.json();
+          console.log(result);
+            if (!result.success) {
+                console.error("Failed to fetch daily problem:", result.message);
+            }
+          setDailyProblem(result.question.problem.name);
+          setDailyProblemRating(result.question.problem.rating);
+          setContestID(result.question.problem.contestId);
+          setIndex(result.question.problem.index);
+        };  
+        fetchRandomProblem();
+      }, []);
+
+      const handleDailyChallenge = async () => {
+        const url = `https://codeforces.com/contest/${ContestID}/problem/${index}`;
+        window.open(url, "_blank").focus();
+      };
+
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 mt-10">
             {/* Page Header */}
@@ -27,9 +60,9 @@ function Challenges() {
                         </p>
                         <div className="bg-blue-50 p-4 rounded-lg mb-4">
                             <h3 className="font-medium text-blue-800 mb-2">Today's Challenge:</h3>
-                            <p className="text-gray-700">Problem Name (Difficulty: Medium)</p>
+                            <p className="text-gray-700">{DailyProblem} (Rating: {DailyProblemRating})</p>
                         </div>
-                        <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
+                        <button onClick = {handleDailyChallenge}  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
                             Start Today's Challenge
                         </button>
                     </div>

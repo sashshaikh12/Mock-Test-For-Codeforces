@@ -3,12 +3,14 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import {connectDB} from './config/db.js';
 import User from './models/user.model.js';
+import DailyQuestion from './models/DailyQuestion.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import userAuth from './middleware/userAuth.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
+import axios from 'axios';
 
 
 const app = express();
@@ -182,6 +184,84 @@ app.post("/google-login", async (req, res) => {
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(401).json({ message: "Invalid Google token" });
+  }
+});
+
+app.get('/random-problem', async (req, res) => {
+  try {
+    const response = await axios.get('https://codeforces.com/api/problemset.problems');
+    
+    // Get all problems
+    const allProblems = response.data.result.problems;
+    
+    // Filter problems to only keep those with a rating
+    const problemsWithRating = allProblems.filter(problem => problem.rating !== undefined && problem.rating >= 800 && problem.rating <= 1800);
+
+    // Select a random problem from the filtered list
+    const randomIndex = Math.floor(Math.random() * problemsWithRating.length);
+    const randomProblem = problemsWithRating[randomIndex];
+    
+    return res.status(200).json({
+      message: "Problems fetched", 
+      problem: randomProblem,
+    });
+  } catch (error) {
+    console.error("Error fetching problems:", error);
+    return res.status(500).json({message: "Failed to fetch problems"});
+  }
+});
+
+app.get('/daily-question', async (req, res) => {
+  try {
+    // Step 1: Check if today's question already exists
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const question = await DailyQuestion.findOne({
+      date: { 
+        $gte: today, 
+        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000) 
+      }
+    });
+
+    if (question) {
+      return res.json({ success: true, question });
+    }
+
+    // Step 2: Fetch a new problem if not found
+    const response = await axios.get('https://codeforces.com/api/problemset.problems');
+    const allProblems = response.data.result.problems;
+    
+    // Filter problems with a valid rating
+    const problemsWithRating = allProblems.filter(problem => problem.rating !== undefined && problem.rating >= 800 && problem.rating <= 1800);
+    
+    if (problemsWithRating.length === 0) {
+      return res.status(500).json({ success: false, message: "No suitable problems found" });
+    }
+
+    // Select a random problem
+    const randomIndex = Math.floor(Math.random() * problemsWithRating.length);
+    const problem = problemsWithRating[randomIndex];
+
+    const newDailyQuestion = new DailyQuestion({
+      date: today,
+      problem: {
+        contestId: problem.contestId,
+        index: problem.index,
+        name: problem.name,
+        rating: problem.rating,
+        tags: problem.tags
+      }
+    });
+
+    await newDailyQuestion.save();
+
+    // Step 3: Return the new question
+    res.json({ success: true, question: newDailyQuestion });
+
+  } catch (error) {
+    console.error("Error fetching daily question:", error);
+    res.status(500).json({ success: false, message: "Internal Server Error" });
   }
 });
 

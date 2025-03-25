@@ -1,6 +1,10 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 
 function MockTest() {
+
+    const navigate = useNavigate();
+
     return(
         <div className="py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto mt-7">
@@ -13,7 +17,7 @@ function MockTest() {
                         <h3 className="text-xl md:text-2xl text-gray-600">
                             Test your knowledge and boost your skills!
                         </h3>
-                        <button className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 hover:cursor-pointer">
+                        <button onClick={()=>{navigate("/mock-test-setup")}} className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-3 px-8 rounded-lg shadow-lg transition duration-300 transform hover:scale-105 hover:cursor-pointer">
                             Start Test
                         </button>
                     </div>

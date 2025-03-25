@@ -59,7 +59,7 @@ function Home() {
         <h3 className="text-xl px-4">
           Time to sharpen your skills and conquer new challenges! 🚀
         </h3>
-        <button className="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg mt-5 py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:cursor-pointer">
+        <button onClick={()=>{navigate("/mock-test-setup")}} className="bg-teal-600 hover:bg-teal-700 text-white font-semibold text-lg mt-5 py-3 px-8 rounded-lg transition-all transform hover:scale-105 shadow-lg hover:cursor-pointer">
           Start Mock Test
         </button>
       </div>
