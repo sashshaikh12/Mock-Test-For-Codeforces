@@ -1,6 +1,78 @@
-import React from "react";
+import {React, useState} from "react";
 
 function MockTestSetup() {
+
+  const [CodeforcesHandle, setCodeforcesHandle] = useState('');
+  const [ContestID, setContestID] = useState(0);
+  const [index, setIndex] = useState("");
+  const [lowerBound, setLowerBound] = useState(0);
+  const [upperBound, setUpperBound] = useState(0);
+  const [timeLimit, setTimeLimit] = useState(0);
+
+  const HandleCodeforcesUsername = async () => {
+
+    if(CodeforcesHandle === ''){
+      alert("Please enter a valid Codeforces username");
+      return;
+    }
+
+    let result = await fetch("http://localhost:5000/random-problem", {
+      method: "get",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+    result = await result.json();
+    setContestID(result.problem.contestId);
+    setIndex(result.problem.index);
+  }
+
+  const HandleConfirmation = async () => {
+    if(CodeforcesHandle === '' || ContestID === 0 || index === ""){
+      alert("Please verify first");
+      return;
+    }
+    let result = await fetch("http://localhost:5000/last-submission", {
+      method: "post",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        handle: CodeforcesHandle,
+      }),
+    });
+    result = await result.json();
+    console.log(result)
+    if(result.message === "Invalid Codeforces handle"){
+      alert("Invalid Codeforces handle");
+    }
+    else if(result.message === "Failed to fetch last submission"){
+      alert("invalid handle");
+    }
+    else{
+      if(result.submission.problem.contestId === ContestID && result.submission.problem.index === index && result.submission.verdict === "COMPILATION_ERROR"){
+        let response = await fetch("http://localhost:5000/codeforces-token", {
+          method: "post",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            handle: CodeforcesHandle,
+          }),
+        });
+        response = await response.json();
+        if(response.message === "codeforces handle added"){
+          alert("Verification successful");
+        }
+        else alert("Verification failed");
+      }
+      else alert("Verification failed");
+    }
+  }
+
   return (
     <div className="max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow-lg">
       {/* Header */}
@@ -18,8 +90,10 @@ function MockTestSetup() {
               type="text"
               placeholder="Enter Codeforces username"
               className="flex-grow px-4 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500"
+              value={CodeforcesHandle}
+              onChange={(e) => setCodeforcesHandle(e.target.value)}
             />
-            <button className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+            <button onClick = {HandleCodeforcesUsername}  className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition hover:cursor-pointer">
               Verify
             </button>
           </div>
@@ -28,24 +102,30 @@ function MockTestSetup() {
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
             <h3 className="font-medium text-blue-800 mb-2">Verification Steps:</h3>
             <div className="flex items-center gap-2 mb-3">
-              <span className="text-blue-600 break-all">
-                Problem link will be given here:
-              </span>
-              <button className="shrink-0 px-3 py-1 bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition">
-                Copy
-              </button>
+            <span className="text-blue-600 break-all">
+              {!index 
+                ? "Problem link will be given here:" 
+                : <a href={`https://codeforces.com/contest/${ContestID}/problem/${index}`} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="underline hover:text-blue-800"
+                  >
+                    {`https://codeforces.com/contest/${ContestID}/problem/${index}`}
+                  </a>
+              }
+            </span>
             </div>
             <ol className="list-decimal pl-5 space-y-1 text-blue-700">
               <li>Enter your codeforces profile and click verify</li>
               <li>You will get link to a question on codeforces</li>
               <li>Submit any code that produces a compilation error to the above problem</li>
-              <li>Return here and click the confirmation button below</li>
+              <li>Return here and click the confirmation button below. Do not refresh the page before the confirmation</li>
             </ol>
           </div>
 
           {/* Confirmation Button */}
           <div className="flex justify-center">
-            <button className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2">
+            <button onClick ={HandleConfirmation}  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 hover:cursor-pointer">
               <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
@@ -69,6 +149,7 @@ function MockTestSetup() {
                 <input
                   type="number"
                   placeholder="e.g. 800"
+                  onChange={(e) => setLowerBound(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg bg-white"
                 />
               </div>
@@ -77,6 +158,7 @@ function MockTestSetup() {
                 <input
                   type="number"
                   placeholder="e.g. 1500"
+                  onChange={(e) => setUpperBound(e.target.value)}
                   className="w-full px-3 py-2 border rounded-lg bg-white"
                 />
               </div>
@@ -89,6 +171,7 @@ function MockTestSetup() {
             <input
               type="number"
               placeholder="e.g. 120"
+              onChange={(e) => setTimeLimit(e.target.value)}
               className="w-full px-3 py-2 border rounded-lg bg-white"
             />
           </div>

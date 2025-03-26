@@ -60,11 +60,11 @@ function Register() {
       body: JSON.stringify(reqbody),
     });
 
-    const data = await response.json();
-    console.warn(data);
+    // const data = await response.json();
+    // console.warn(data);
 
     if (response.status === 200) {
-      navigate("/home", { replace: true });
+      navigate("/codeforces-verify", {state: {email}});
     } else if (response.status === 400) {
       alert("User already exists");
     } else {
@@ -78,11 +78,8 @@ function Register() {
   };
 
   const onSuccess = async (res) => {
-    console.log("Successfully logged in", res);
-    const decoded = jwtDecode(res.credential);
-    console.log(decoded);
-
-    let serverResponse = await fetch("http://localhost:5000/google-login", {
+   
+    let serverResponse = await fetch("http://localhost:5000/google-register", {
       method: "POST",
       credentials: "include", // Important: Allows cookies to be set
       headers: {
@@ -90,10 +87,15 @@ function Register() {
       },
       body: JSON.stringify({ token: res.credential }),
     });
+
+    const data = await serverResponse.json();
   
     if (serverResponse.status === 200) {
-      navigate("/home", { replace: true });
-    } else {
+      navigate("/codeforces-verify", {state: {email: data.email}});
+    }else if(serverResponse.status === 400){
+      alert("User already exists");
+    } 
+    else {
       alert("Google login failed");
     }
   };

@@ -40,7 +40,7 @@ function Login() {
     });
 
     if (result.status === 200) {
-      navigate("/home", { replace: true });
+      navigate("/codeforces-verify", { replace: true });
     } else {
       alert("Invalid Credentials");
     }
@@ -61,7 +61,7 @@ function Login() {
     });
   
     if (serverResponse.status === 200) {
-      navigate("/home", { replace: true });
+      navigate("/codeforces-verify", { replace: true });
     } else {
       alert("Google login failed");
     }

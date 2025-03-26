@@ -45,17 +45,6 @@ app.post('/register', async (req, res) => {
       }
       const user = await User.create({ name, email, password: hash });
 
-      const token = jwt.sign({ id: user._id , name: user.name}, process.env.JWT_SECRET, {
-        expiresIn: '30d',
-      });
-
-      res.cookie('token', token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000
-      });
-
       return res.status(200).json({message: "User registered"});
 
     });
@@ -64,6 +53,40 @@ app.post('/register', async (req, res) => {
   }
 }
 );
+
+app.post('/google-register', async (req, res) => {
+
+  const { token } = req.body;
+
+  try {
+    // Verify the Google token
+    const ticket = await client.verifyIdToken({
+      idToken: token,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+    const { sub, name, email } = payload; // Extract name and email from the Google payload
+
+    // Check if user already exists
+    const user = await User.findOne({ email });
+    if (user) {
+      return res.status(400).json({ message: "User already exists" });
+    }
+
+    // Create a new user
+    const newUser = new User({ name, email });
+    await newUser.save();
+
+
+    res.status(200).json({ message: "User registered", email });
+
+  } catch (error) {
+    console.error("Google Register Error:", error);
+    res.status(401).json({ message: "Invalid Google token" });
+  }
+
+});
 
 app.post('/login', async (req, res) => {
   try{
@@ -173,12 +196,12 @@ app.post("/google-login", async (req, res) => {
     );
 
     // Set token in HTTP-only cookie
-    res.cookie("token", sessionToken, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-    });
+      res.cookie("token", sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+        maxAge: 30 * 24 * 60 * 60 * 1000,
+      });
 
     res.status(200).json({ message: "Login successful", name, email });
   } catch (error) {
@@ -265,6 +288,79 @@ app.get('/daily-question', async (req, res) => {
   }
 });
 
+app.post("/last-submission", async (req, res) => {
+  try {
+    const { handle } = req.body;
+    const CheckHandle = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
+    if (CheckHandle.data.status === "FAILED") {
+      return res.status(400).json({ message: "Invalid Codeforces handle" });
+    }
+    const response = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}&from=1&count=1`);
+    const lastSubmission = response.data.result[0];
+    return res.status(200).json({ message: "Last submission fetched", submission: lastSubmission });
+  } catch (error) {
+    console.error("Error fetching last submission:", error);
+    return res.status(500).json({ message: "Failed to fetch last submission" });
+  }
+}
+);
+
+app.post("/get-token", async (req, res) => {
+  try {
+    const { handle, email } = req.body;
+    
+    if (!handle || !email) {
+      return res.status(400).json({ message: "Handle and email are required" });
+    }
+    
+    // Find user by email
+    let user = await User.findOne({ email });
+    
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+    
+    // Update the user's Codeforces handle if not already set
+    if (!user.codeforcesHandle) {
+      user = await User.findByIdAndUpdate(
+        user._id,
+        { codeforcesHandle: handle },
+        { new: true } // Return the updated document
+      );
+    }
+    
+    // Generate token with MongoDB _id
+    const token = jwt.sign(
+      { id: user._id, name: user.name },
+      process.env.JWT_SECRET,
+      { expiresIn: "30d" }
+    );
+    
+    // Set token in HTTP-only cookie
+    res.cookie("token", token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000,
+    });
+
+    
+    // Return success response with user data
+    return res.status(200).json({ 
+      message: "Codeforces handle added", 
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+        codeforcesHandle: user.codeforcesHandle
+      }
+    });
+    
+  } catch (error) {
+    console.error("Error setting Codeforces handle:", error);
+    return res.status(500).json({ message: "Server error" });
+  }
+});
 
 app.listen(5000, () => {
 connectDB();
