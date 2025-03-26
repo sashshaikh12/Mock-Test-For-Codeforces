@@ -1,179 +1,162 @@
-import {React, useState} from "react";
+import { React, useState } from "react";
 
 function MockTestSetup() {
+  const [lowerBound, setLowerBound] = useState('');
+  const [upperBound, setUpperBound] = useState('');
+  const [timeLimit, setTimeLimit] = useState('');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [errors, setErrors] = useState({
+    lowerBound: '',
+    upperBound: '',
+    timeLimit: ''
+  });
 
-  const [CodeforcesHandle, setCodeforcesHandle] = useState('');
-  const [ContestID, setContestID] = useState(0);
-  const [index, setIndex] = useState("");
-  const [lowerBound, setLowerBound] = useState(0);
-  const [upperBound, setUpperBound] = useState(0);
-  const [timeLimit, setTimeLimit] = useState(0);
+  const toggleTag = (tag) => {
+    setSelectedTags(prev => 
+      prev.includes(tag) 
+        ? prev.filter(t => t !== tag)
+        : [...prev, tag]
+    );
+  };
 
-  const HandleCodeforcesUsername = async () => {
+  const validateDifficulty = (value, isLowerBound) => {
+    const numValue = parseInt(value);
+    if (isNaN(numValue) || value === '') return false;
+    
+    // Check if value is in valid range (800-2200) and multiple of 100
+    if (numValue < 800 || numValue > 2200 || numValue % 100 !== 0) {
+      return false;
+    }
+    
+    // Cross-bound validation
+    if (isLowerBound && upperBound && numValue > parseInt(upperBound)) {
+      return false;
+    }
+    if (!isLowerBound && lowerBound && numValue < parseInt(lowerBound)) {
+      return false;
+    }
+    
+    return true;
+  };
 
-    if(CodeforcesHandle === ''){
-      alert("Please enter a valid Codeforces username");
-      return;
-    }
+  const validateTime = (value) => {
+    const numValue = parseInt(value);
+    return !isNaN(numValue) && numValue > 0 && numValue % 10 === 0 && value !== '';
+  };
 
-    let result = await fetch("http://localhost:5000/random-problem", {
-      method: "get",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    });
-    result = await result.json();
-    setContestID(result.problem.contestId);
-    setIndex(result.problem.index);
-  }
+  const handleLowerBoundChange = (e) => {
+    const value = e.target.value;
+    setLowerBound(value);
+    
+    const isValid = validateDifficulty(value, true);
+    setErrors(prev => ({
+      ...prev,
+      lowerBound: isValid ? '' : 'Must be between 800-2200 in 100 increments and ≤ upper bound'
+    }));
+  };
 
-  const HandleConfirmation = async () => {
-    if(CodeforcesHandle === '' || ContestID === 0 || index === ""){
-      alert("Please verify first");
-      return;
-    }
-    let result = await fetch("http://localhost:5000/last-submission", {
-      method: "post",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        handle: CodeforcesHandle,
-      }),
-    });
-    result = await result.json();
-    console.log(result)
-    if(result.message === "Invalid Codeforces handle"){
-      alert("Invalid Codeforces handle");
-    }
-    else if(result.message === "Failed to fetch last submission"){
-      alert("invalid handle");
-    }
-    else{
-      if(result.submission.problem.contestId === ContestID && result.submission.problem.index === index && result.submission.verdict === "COMPILATION_ERROR"){
-        let response = await fetch("http://localhost:5000/codeforces-token", {
-          method: "post",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            handle: CodeforcesHandle,
-          }),
-        });
-        response = await response.json();
-        if(response.message === "codeforces handle added"){
-          alert("Verification successful");
-        }
-        else alert("Verification failed");
-      }
-      else alert("Verification failed");
-    }
-  }
+  const handleUpperBoundChange = (e) => {
+    const value = e.target.value;
+    setUpperBound(value);
+    
+    const isValid = validateDifficulty(value, false);
+    setErrors(prev => ({
+      ...prev,
+      upperBound: isValid ? '' : 'Must be between 800-2200 in 100 increments and ≥ lower bound'
+    }));
+  };
+
+  const handleTimeLimitChange = (e) => {
+    const value = e.target.value;
+    setTimeLimit(value);
+    
+    const isValid = validateTime(value);
+    setErrors(prev => ({
+      ...prev,
+      timeLimit: isValid ? '' : 'Must be a positive multiple of 10 (e.g., 10, 20, 30)'
+    }));
+  };
+
+  const isFormValid = () => {
+    return (
+      validateDifficulty(lowerBound, true) &&
+      validateDifficulty(upperBound, false) &&
+      validateTime(timeLimit) &&
+      selectedTags.length > 0
+    );
+  };
 
   return (
-    <div className="max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow-lg">
+    <div className="max-w-2xl mx-auto my-8 p-6 bg-white rounded-xl shadow-sm border border-gray-100">
       {/* Header */}
       <div className="text-center mb-8">
-        <h1 className="text-3xl font-bold text-teal-700">Start Mock Test</h1>
-        <p className="text-gray-600 mt-2">Set your preferences and review the rules</p>
-      </div>
-
-      {/* Verification Section */}
-      <div className="mb-8 p-6 bg-teal-50 rounded-lg border border-teal-200">
-        <h2 className="text-xl font-semibold text-teal-800 mb-4">Step 1: Verify Codeforces Profile</h2>
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="Enter Codeforces username"
-              className="flex-grow px-4 py-2 border border-teal-300 rounded-lg focus:ring-2 focus:ring-teal-500"
-              value={CodeforcesHandle}
-              onChange={(e) => setCodeforcesHandle(e.target.value)}
-            />
-            <button onClick = {HandleCodeforcesUsername}  className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition hover:cursor-pointer">
-              Verify
-            </button>
-          </div>
-
-          {/* Verification URL Display */}
-          <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-800 mb-2">Verification Steps:</h3>
-            <div className="flex items-center gap-2 mb-3">
-            <span className="text-blue-600 break-all">
-              {!index 
-                ? "Problem link will be given here:" 
-                : <a href={`https://codeforces.com/contest/${ContestID}/problem/${index}`} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="underline hover:text-blue-800"
-                  >
-                    {`https://codeforces.com/contest/${ContestID}/problem/${index}`}
-                  </a>
-              }
-            </span>
-            </div>
-            <ol className="list-decimal pl-5 space-y-1 text-blue-700">
-              <li>Enter your codeforces profile and click verify</li>
-              <li>You will get link to a question on codeforces</li>
-              <li>Submit any code that produces a compilation error to the above problem</li>
-              <li>Return here and click the confirmation button below. Do not refresh the page before the confirmation</li>
-            </ol>
-          </div>
-
-          {/* Confirmation Button */}
-          <div className="flex justify-center">
-            <button onClick ={HandleConfirmation}  className="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center gap-2 hover:cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-              </svg>
-              Confirm Verification
-            </button>
-          </div>
-        </div>
+        <h1 className="text-2xl font-bold text-gray-800 mb-2">Start Mock Test</h1>
+        <p className="text-gray-500">Set your preferences and review the rules</p>
       </div>
 
       {/* Test Configuration */}
       <div className="mb-8">
-        <h2 className="text-xl font-semibold text-teal-800 mb-4">Step 2: Test Preferences</h2>
+        <h2 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-100">Test Preferences</h2>
         
         <div className="grid md:grid-cols-2 gap-6 mb-6">
           {/* Difficulty Range */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Difficulty Range</label>
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <div className="w-full">
-                <label className="block text-xs text-gray-500 mb-1">Lower Bound</label>
                 <input
                   type="number"
                   placeholder="e.g. 800"
-                  onChange={(e) => setLowerBound(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                  value={lowerBound}
+                  onChange={handleLowerBoundChange}
+                  className={`w-full px-4 py-2 border ${
+                    errors.lowerBound ? 'border-red-500' : 'border-gray-200'
+                  } rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400`}
+                  min="800"
+                  max="2200"
+                  step="100"
                 />
+                {errors.lowerBound && (
+                  <p className="mt-1 text-sm text-red-600">{errors.lowerBound}</p>
+                )}
               </div>
               <div className="w-full">
-                <label className="block text-xs text-gray-500 mb-1">Upper Bound</label>
                 <input
                   type="number"
                   placeholder="e.g. 1500"
-                  onChange={(e) => setUpperBound(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg bg-white"
+                  value={upperBound}
+                  onChange={handleUpperBoundChange}
+                  className={`w-full px-4 py-2 border ${
+                    errors.upperBound ? 'border-red-500' : 'border-gray-200'
+                  } rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400`}
+                  min="800"
+                  max="2200"
+                  step="100"
                 />
+                {errors.upperBound && (
+                  <p className="mt-1 text-sm text-red-600">{errors.upperBound}</p>
+                )}
               </div>
             </div>
           </div>
 
           {/* Time Limit */}
-          <div className="flex flex-col justify-between items-center">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">Time Limit (minutes)</label>
             <input
               type="number"
               placeholder="e.g. 120"
-              onChange={(e) => setTimeLimit(e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg bg-white"
+              value={timeLimit}
+              onChange={handleTimeLimitChange}
+              className={`w-full px-4 py-2 border ${
+                errors.timeLimit ? 'border-red-500' : 'border-gray-200'
+              } rounded-lg focus:ring-2 focus:ring-blue-200 focus:border-blue-400`}
+              min="10"
+              step="10"
             />
+            {errors.timeLimit && (
+              <p className="mt-1 text-sm text-red-600">{errors.timeLimit}</p>
+            )}
           </div>
         </div>
 
@@ -181,15 +164,28 @@ function MockTestSetup() {
         <div className="mb-4">
           <label className="block text-sm font-medium text-gray-700 mb-2">Problem Tags</label>
           <div className="flex flex-wrap gap-2">
-            {['greedy', 'dp', 'math', 'graphs', 'binary search'].map(tag => (
-              <button
-                key={tag}
-                className="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm hover:bg-teal-200 transition hover:cursor-pointer"
-              >
-                {tag}
-              </button>
-            ))}
-            <button className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm hover:bg-gray-200 transition hover:cursor-pointer">
+            {["binary search", "bitmasks", "brute force", "combinatorics", "constructive algorithms", "data structures", "dfs and similar", "divide and conquer", "dp", "dsu", "games", "geometry", "graphs", "greedy", "math", "number theory", "probabilities", "shortest paths", "sortings", "strings", "ternary search", "trees", "two pointers"]
+              .map(tag => (
+                <button
+                  key={tag}
+                  className={`px-3 py-1 rounded-full text-sm transition-colors hover:cursor-pointer ${
+                    selectedTags.includes(tag)
+                      ? 'bg-green-300 text-gray-800 hover:bg-green-400'
+                      : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  }`}
+                  onClick={() => toggleTag(tag)}
+                >
+                  {tag}
+                </button>
+              ))}
+            <button
+              className={`px-3 py-1 rounded-full text-sm transition-colors hover:cursor-pointer ${
+                selectedTags.includes('Mixed')
+                  ? 'bg-green-300 text-gray-800 hover:bg-green-400'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+              onClick={() => toggleTag('Mixed')}
+            >
               Mixed
             </button>
           </div>
@@ -198,44 +194,40 @@ function MockTestSetup() {
 
       {/* Rules Section */}
       <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
-        <h2 className="text-xl font-semibold text-gray-800 mb-4">Test Rules</h2>
-        <div className="max-h-40 overflow-y-auto pr-2">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Test Rules</h2>
+        <div className="max-h-48 overflow-y-auto pr-3">
           <ul className="space-y-3 text-gray-700">
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>4 problems will be selected based on your configuration</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>Timer starts immediately and cannot be paused</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>The mock assessment session will end when you have successfully submitted a correct answer for each question, the allotted time has expired, or you end the session manually.</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>You can use a local IDE, but AI-generated solutions or predefined templates are not allowed.</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
-              <span>It’s recommended to use online IDEs like CodeChef IDE for a seamless experience.</span>
+              <span className="text-blue-500 mr-2">•</span>
+              <span>It's recommended to use online IDEs like CodeChef IDE for a seamless experience.</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>Only accepted submissions will be counted as solved</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>You can skip problems and return to them later</span>
             </li>
             <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
+              <span className="text-blue-500 mr-2">•</span>
               <span>Wrong submissions don't incur penalties</span>
-            </li>
-            <li className="flex items-start">
-              <span className="text-teal-500 mr-2">•</span>
-              <span>Once completed, you will receive your final score and analysis based on your performance.</span>
             </li>
           </ul>
         </div>
@@ -243,7 +235,14 @@ function MockTestSetup() {
 
       {/* Start Button */}
       <div className="text-center">
-        <button className="px-8 py-3 bg-teal-600 text-white font-medium rounded-lg shadow hover:bg-teal-700 transition transform hover:scale-[1.02]">
+        <button 
+          className={`px-8 py-3 font-medium rounded-lg shadow-sm transition-colors hover:shadow-md ${
+            isFormValid()
+              ? 'bg-blue-600 text-white hover:bg-blue-700 cursor-pointer'
+              : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+          }`}
+          disabled={!isFormValid()}
+        >
           Start Mock Test
         </button>
       </div>
