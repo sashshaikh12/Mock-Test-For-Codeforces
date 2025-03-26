@@ -1,6 +1,5 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { FcGoogle } from "react-icons/fc";
 import { MdOutlineEmail } from "react-icons/md";
 import { TbLockPassword } from "react-icons/tb";
 import { Link } from "react-router-dom";
@@ -39,10 +38,20 @@ function Login() {
       },
     });
 
-    if (result.status === 200) {
-      navigate("/codeforces-verify", { replace: true });
-    } else {
-      alert("Invalid Credentials");
+    const response = await result.json();
+    console.log(result)
+
+    if(result.status === 200) {
+      if(response.codeforcesVerificationRequired){
+        navigate("/codeforces-verify", {state: {email: response.email}});
+      }
+      else
+      {
+        navigate("/home", { replace: true });
+      }
+    }
+    else{
+      alert("invalid credentials");
     }
   };
 
@@ -59,9 +68,17 @@ function Login() {
       },
       body: JSON.stringify({ token: res.credential }),
     });
-  
+
+    const result = await serverResponse.json();
+    
     if (serverResponse.status === 200) {
-      navigate("/codeforces-verify", { replace: true });
+      if(result.codeforcesVerificationRequired){
+        navigate("/codeforces-verify", {state: {email: result.email}});
+      }
+      else
+      {
+      navigate("/home", { replace: true });
+      }
     } else {
       alert("Google login failed");
     }

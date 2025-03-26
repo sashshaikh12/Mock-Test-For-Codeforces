@@ -66,7 +66,7 @@ app.post('/google-register', async (req, res) => {
     });
 
     const payload = ticket.getPayload();
-    const { sub, name, email } = payload; // Extract name and email from the Google payload
+    const {name, email } = payload; // Extract name and email from the Google payload
 
     // Check if user already exists
     const user = await User.findOne({ email });
@@ -92,12 +92,22 @@ app.post('/login', async (req, res) => {
   try{
     const { email, password } = req.body;
     const user = await User.findOne({ email});  //find user with the email  
+
     if(user){
       bcrypt.compare(password, user.password, (err, result) => {
         if(err){
           return res.status(500).json({message: "Server Could not compare password"});
         }
         if(result){
+
+          if (!user.codeforcesHandle) {
+            // If not set, send back response indicating this
+            return res.status(200).json({ 
+              message: "Login successful but Codeforces handle not set",
+              codeforcesVerificationRequired: true,
+              email: user.email
+            });
+          }
 
           const token = jwt.sign({ id: user._id, name: user.name }, process.env.JWT_SECRET, {
             expiresIn: '30d',
@@ -188,22 +198,49 @@ app.post("/google-login", async (req, res) => {
     const payload = ticket.getPayload();
     const { sub, name, email } = payload; // Extract name and email from the Google payload
 
-    // Generate a session JWT token using Google's sub as id
-    const sessionToken = jwt.sign(
-      { id: sub, name: name },
-      process.env.JWT_SECRET,
-      { expiresIn: "30d" }
-    );
+    const existingUser = await User.findOne({ email });
 
-    // Set token in HTTP-only cookie
-      res.cookie("token", sessionToken, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-      });
+    if (existingUser) {
+      // User exists - check if they have a Codeforces handle
+      if (!existingUser.codeforcesHandle) {
+        // No Codeforces handle set - require verification
+        return res.status(200).json({
+          message: "Login successful but Codeforces handle not set",
+          codeforcesVerificationRequired: true,
+          email: email
+        });
+      }
+      else
+      {
+        // Generate a session JWT token using Google's sub as id
+        const sessionToken = jwt.sign(
+          { id: sub, name: name },
+          process.env.JWT_SECRET,
+          { expiresIn: "30d" }
+        );
 
-    res.status(200).json({ message: "Login successful", name, email });
+        // Set token in HTTP-only cookie
+        res.cookie("token", sessionToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+          maxAge: 30 * 24 * 60 * 60 * 1000,
+        });
+
+        return res.status(200).json({ message: "Login successful", name, email });
+      }
+    }
+    else
+    {
+        const newUser = new User({ name, email });
+        await newUser.save();
+        return res.status(200).json({
+          message: "Login successful but Codeforces handle not set",
+          codeforcesVerificationRequired: true,
+          email: email
+        });
+    }
+
   } catch (error) {
     console.error("Google Auth Error:", error);
     res.status(401).json({ message: "Invalid Google token" });
