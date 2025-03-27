@@ -122,13 +122,22 @@ function MockTestDashboard() {
                   </div>
                 </div>
               ))
+              
             ) : (
               <div className="bg-white rounded-lg shadow-sm p-8 text-center">
                 <p className="text-gray-600">No test questions available</p>
               </div>
             )}
+            <div className="flex justify-center mt-6">
+                    <button
+                      className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition-colors hover:cursor-pointer"
+                    >
+                      End Test
+                    </button>
+                  </div>
           </div>
         )}
+        
       </div>
     </div>
   );
