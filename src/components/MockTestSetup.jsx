@@ -15,10 +15,29 @@ function MockTestSetup() {
   });
 
   const toggleTag = (tag) => {
-    setSelectedTags(prev => 
-      prev.includes(tag) 
-        ? prev.filter(t => t !== tag)
-        : [...prev, tag]
+    if (tag === 'Mixed') {
+      // If Mixed is clicked, set selectedTags to only contain Mixed
+      setSelectedTags(prev => prev.includes('Mixed') ? [] : ['Mixed']);
+    } else {
+      // If any other tag is clicked, make sure Mixed is not selected
+      setSelectedTags(prev => {
+        if (prev.includes('Mixed')) {
+          return [tag]; // Remove Mixed if it was selected
+        }
+        return prev.includes(tag) 
+          ? prev.filter(t => t !== tag)
+          : [...prev, tag];
+      });
+    }
+  };
+  
+  // Add this helper function to check if a tag should be disabled
+  const isTagDisabled = (tag) => {
+    // Disable if Mixed is selected and this isn't the Mixed button
+    // OR if Mixed isn't selected but this is the Mixed button and other tags are selected
+    return (
+      (selectedTags.includes('Mixed') && tag !== 'Mixed') ||
+      (!selectedTags.includes('Mixed') && tag === 'Mixed' && selectedTags.length > 0)
     );
   };
 
@@ -171,23 +190,30 @@ function MockTestSetup() {
               .map(tag => (
                 <button
                   key={tag}
-                  className={`px-3 py-1 rounded-full text-sm transition-colors hover:cursor-pointer ${
+                  className={`px-3 py-1 rounded-full text-sm transition-colors ${
                     selectedTags.includes(tag)
                       ? 'bg-green-300 text-gray-800 hover:bg-green-400'
                       : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+                  } ${
+                    isTagDisabled(tag) ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'
                   }`}
-                  onClick={() => toggleTag(tag)}
+                  onClick={() => !isTagDisabled(tag) && toggleTag(tag)}
+                  disabled={isTagDisabled(tag)}
                 >
                   {tag}
                 </button>
               ))}
+              
             <button
-              className={`px-3 py-1 rounded-full text-sm transition-colors hover:cursor-pointer ${
+              className={`px-3 py-1 rounded-full text-sm transition-colors ${
                 selectedTags.includes('Mixed')
                   ? 'bg-green-300 text-gray-800 hover:bg-green-400'
                   : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              } ${
+                isTagDisabled('Mixed') ? 'opacity-50 cursor-not-allowed' : 'hover:cursor-pointer'
               }`}
-              onClick={() => toggleTag('Mixed')}
+              onClick={() => !isTagDisabled('Mixed') && toggleTag('Mixed')}
+              disabled={isTagDisabled('Mixed')}
             >
               Mixed
             </button>
@@ -249,7 +275,7 @@ function MockTestSetup() {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           disabled={!isFormValid()}
-          onClick = {() => navigate('/mock-test-dashboard')}
+          onClick = {() => navigate('/mock-test-dashboard', {state: {selectedTags, lowerBound, upperBound, timeLimit}})}
         >
           Start Mock Test
         </button>

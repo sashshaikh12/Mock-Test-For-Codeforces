@@ -6,7 +6,6 @@ function CodeforcesVerify() {
     const navigate = useNavigate();
     const location = useLocation();
     const email = location.state?.email || "";
-    console.log(email);
     const [codeforcesHandle, setCodeforcesHandle] = useState('');
     const [contestId, setContestId] = useState(0);
     const [index, setIndex] = useState("");

@@ -11,6 +11,7 @@ import userAuth from './middleware/userAuth.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import { select } from 'three/tsl';
 
 
 const app = express();
@@ -398,6 +399,64 @@ app.post("/get-token", async (req, res) => {
     return res.status(500).json({ message: "Server error" });
   }
 });
+
+app.post("/test-questions", async (req, res) => {
+  
+  const {selectedTags, lowerBound, upperBound} = req.body;
+
+  try{
+
+    const response = await axios.get('https://codeforces.com/api/problemset.problems');
+    const allProblems = response.data.result.problems;
+    
+    let problemsWithRating;
+    
+    // Check if only the "Mixed" tag is selected
+    if (selectedTags.length === 1 && selectedTags[0] === 'Mixed') {
+      // For Mixed, only filter by rating and make sure problems have tags
+      problemsWithRating = allProblems.filter(problem => 
+        problem.rating !== undefined && 
+        problem.rating >= lowerBound && 
+        problem.rating <= upperBound &&
+        problem.tags.length > 0
+      );
+    } else {
+      // Normal tag filtering for specific tags
+      problemsWithRating = allProblems.filter(problem => 
+        problem.rating !== undefined && 
+        problem.rating >= lowerBound && 
+        problem.rating <= upperBound &&
+        problem.tags.length > 0 &&
+        problem.tags.every(tag => selectedTags.includes(tag))
+      );
+    }
+    
+
+    if(problemsWithRating.length < 4){
+      return res.status(400).json({message: "Not enough problems found"});
+    }
+
+
+    const testQuestions = [];
+    const testQuestionIndices = new Set();
+
+    while (testQuestions.length < 4) {
+      const randomIndex = Math.floor(Math.random() * problemsWithRating.length);
+      if (!testQuestionIndices.has(randomIndex)) {
+        testQuestionIndices.add(randomIndex);
+        testQuestions.push(problemsWithRating[randomIndex]);
+      }
+    }
+
+
+    return res.status(200).json({message: "Test questions fetched", testQuestions});
+
+  }catch(error){
+    res.status(500).json({message: "Server Could not fetch test questions"});
+  }
+
+}
+);
 
 app.listen(5000, () => {
 connectDB();
