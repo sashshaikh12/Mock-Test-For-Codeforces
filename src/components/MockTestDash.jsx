@@ -13,25 +13,56 @@ function MockTestDashboard() {
     const fetchCompletedTests = async () => {
       try {
         setIsLoading(true);
+        
+        // Check if we have all the required parameters to start a test
+        if (!selectedTags || !lowerBound || !upperBound) {
+          // If we don't, try to fetch from an existing test
+          const testStatusResponse = await fetch("http://localhost:5000/is-test-ongoing", {
+            method: "post",
+            credentials: "include"
+          });
+          
+          // If there's no ongoing test and no parameters, redirect to setup
+          if (testStatusResponse.status !== 200) {
+            alert("Failed to load test questions");
+            navigate("/mock-test-setup");
+            return;
+          }
+        }
+        
+        // Now fetch or create test questions
         let result = await fetch("http://localhost:5000/test-questions", {
           method: "post",
           credentials: "include",
-          body: JSON.stringify({ selectedTags, lowerBound, upperBound}),
           headers: {
             "Content-Type": "application/json",
           },
+          body: JSON.stringify({ 
+            selectedTags, 
+            lowerBound, 
+            upperBound,
+            timeLimit
+          }),
         });
-        result = await result.json();
         
-        if(result.message === "Not enough problems found") {
+        if (result.status !== 200) {
+          throw new Error("Failed to fetch test questions");
+        }
+        
+        const data = await result.json();
+        
+        if(data.message === "Not enough problems found") {
           alert("Not enough problems exist with the given inputs");
           navigate("/mock-test-setup");
           return;
         }
 
-        const testsWithStatus = result.testQuestions.map(test => ({
+        let id = 0;
+  
+        const testsWithStatus = data.testQuestions.map(test => ({
           ...test,
-          accepted: false
+          accepted: false,
+          id: id++,
         }));
         
         setCompletedTests(testsWithStatus); 

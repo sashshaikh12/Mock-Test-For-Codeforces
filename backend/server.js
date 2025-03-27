@@ -8,6 +8,7 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import userAuth from './middleware/userAuth.js';
+import testAuth from './middleware/testAuth.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
 import axios from 'axios';
@@ -157,6 +158,14 @@ app.post('/is-auth', userAuth, (req, res) => {
     return res.status(200).json({message: "Authenticated"});
   }catch(error){
     res.status(500).json({message: "Server Could not authenticate"}); 
+}
+});
+
+app.post('/is-test-ongoing', testAuth, (req, res) => {
+  try{
+    return res.status(200).json({message: "Test ongoing"});
+  }catch(error){
+    res.status(500).json({message: "Server Could not find test"}); 
 }
 });
 
@@ -400,12 +409,37 @@ app.post("/get-token", async (req, res) => {
   }
 });
 
-app.post("/test-questions", async (req, res) => {
+app.post("/test-questions", testAuth, async (req, res) => {
   
-  const {selectedTags, lowerBound, upperBound} = req.body;
+  const {selectedTags, lowerBound, upperBound, problems} = req.body;
 
-  try{
+  try {
+    // If problems already exist in the testToken, return those instead of generating new ones
+    if (problems && Array.isArray(problems) && problems.length > 0) {
+      // Fetch all problems to get full details
+      const response = await axios.get('https://codeforces.com/api/problemset.problems');
+      const allProblems = response.data.result.problems;
+      
+      // Find the full problem details for each problem identifier
+      const testQuestions = problems.map(problem => {
+        const fullProblem = allProblems.find(p => 
+          p.contestId === problem.contestId && p.index === problem.index
+        );
+        
+        return fullProblem || problem; // Fallback to the identifier if full problem not found
+      }).filter(problem => problem); // Remove any undefined entries
+      
+      if (testQuestions.length > 0) {
+        return res.status(200).json({
+          message: "Test questions retrieved from cookie",
+          testQuestions,
+          fromCookie: true
+        });
+      }
+      // If we couldn't find the problems, continue to generate new ones
+    }
 
+    // If no valid problems in cookie, generate new ones
     const response = await axios.get('https://codeforces.com/api/problemset.problems');
     const allProblems = response.data.result.problems;
     
@@ -431,11 +465,9 @@ app.post("/test-questions", async (req, res) => {
       );
     }
     
-
     if(problemsWithRating.length < 4){
       return res.status(400).json({message: "Not enough problems found"});
     }
-
 
     const testQuestions = [];
     const testQuestionIndices = new Set();
@@ -448,15 +480,39 @@ app.post("/test-questions", async (req, res) => {
       }
     }
 
+    const problemIdentifiers = testQuestions.map(question => ({
+      contestId: question.contestId,
+      index: question.index
+    }));
 
-    return res.status(200).json({message: "Test questions fetched", testQuestions});
+    const testToken = jwt.sign(
+      { 
+        problems: problemIdentifiers,
+      },
+      process.env.JWT_SECRET,
+      { 
+        expiresIn: "30d"
+      }
+    );
 
-  }catch(error){
+    res.cookie("testToken", testToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict',
+      maxAge: 30 * 24 * 60 * 60 * 1000
+    });
+
+    return res.status(200).json({
+      message: "Test questions fetched", 
+      testQuestions,
+      fromCookie: false
+    });
+
+  } catch(error) {
+    console.error("Error fetching test questions:", error);
     res.status(500).json({message: "Server Could not fetch test questions"});
   }
-
-}
-);
+});
 
 app.listen(5000, () => {
 connectDB();
