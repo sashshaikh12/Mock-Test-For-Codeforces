@@ -1,6 +1,9 @@
 import { React, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 function MockTestSetup() {
+
+  const navigate = useNavigate();
   const [lowerBound, setLowerBound] = useState('');
   const [upperBound, setUpperBound] = useState('');
   const [timeLimit, setTimeLimit] = useState('');
@@ -229,6 +232,10 @@ function MockTestSetup() {
               <span className="text-blue-500 mr-2">•</span>
               <span>Wrong submissions don't incur penalties</span>
             </li>
+            <li className="flex items-start">
+              <span className="text-blue-500 mr-2">•</span>
+              <span>After getting correct answer, click on accepted button on the dashboard</span>
+            </li>
           </ul>
         </div>
       </div>
@@ -242,6 +249,7 @@ function MockTestSetup() {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           disabled={!isFormValid()}
+          onClick = {() => navigate('/mock-test-dashboard')}
         >
           Start Mock Test
         </button>

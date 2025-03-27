@@ -5,6 +5,7 @@ import Register from "./components/Register";
 import Home from "./components/Home";
 import MockTestSetup from "./components/MockTestSetup";
 import CodeforcesVerify from "./components/CodeforcesVerify";
+import MockTestDashboard from "./components/MockTestDash";
 import { ProtectedRoutes } from "./components/ProtectedRoutes";
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/home" element={<ProtectedRoutes> <Home /> </ProtectedRoutes>} />
         <Route path="/mock-test-setup" element={<ProtectedRoutes> <MockTestSetup /> </ProtectedRoutes>} />
+        <Route path="/mock-test-dashboard" element={<ProtectedRoutes> <MockTestDashboard /> </ProtectedRoutes>} />
         <Route path="/codeforces-verify" element={<CodeforcesVerify />} />
       </Routes>
     </BrowserRouter>
