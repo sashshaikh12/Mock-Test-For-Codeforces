@@ -6,6 +6,7 @@ function MockTestDashboard() {
   const navigate = useNavigate();
   const { selectedTags, lowerBound, upperBound, timeLimit } = location.state || {};
 
+
   const [completedTests, setCompletedTests] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -17,7 +18,7 @@ function MockTestDashboard() {
         // Check if we have all the required parameters to start a test
         if (!selectedTags || !lowerBound || !upperBound) {
           // If we don't, try to fetch from an existing test
-          const testStatusResponse = await fetch("http://localhost:5000/is-test-ongoing", {
+          const testStatusResponse = await fetch("http://localhost:5000/is-test-ongoing", { 
             method: "post",
             credentials: "include"
           });
@@ -29,6 +30,28 @@ function MockTestDashboard() {
             return;
           }
         }
+
+        const userData = await fetch("http://localhost:5000/user-data", {
+          method: "get",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        });
+        if (userData.status !== 200) {
+          console.log("Failed to fetch user data");
+          navigate("/mock-test-setup");
+          return;
+        }
+        const userDataJson = await userData.json();
+    
+        // If we have a userId, we can proceed to fetch test questions
+        if (!userDataJson.userId) {
+          console.log("User ID not found");
+          navigate("/mock-test-setup");
+          return;
+        }
+        // If we have all the required parameters, we can proceed to fetch test questions
         
         // Now fetch or create test questions
         let result = await fetch("http://localhost:5000/test-questions", {
@@ -41,7 +64,8 @@ function MockTestDashboard() {
             selectedTags, 
             lowerBound, 
             upperBound,
-            timeLimit
+            timeLimit,
+            userId: userDataJson.userId,
           }),
         });
         

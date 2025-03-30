@@ -17,8 +17,8 @@ const testAuth = async(req, res, next) => {
     
     const tokenDecode = jwt.verify(testToken, process.env.JWT_SECRET);
 
-    if(tokenDecode.problems){
-      req.body.problems = tokenDecode.problems;
+    if(tokenDecode.testId){
+      req.body.testId = tokenDecode.testId;
     }
     else
     {
@@ -28,6 +28,7 @@ const testAuth = async(req, res, next) => {
     next();
 
   }catch(error){
+    res.clearCookie('testToken');
     res.json({message: error.message});
   }
 };

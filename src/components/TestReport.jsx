@@ -52,16 +52,7 @@ function TestReport() {
                 <p className="text-blue-600 mb-4">
                     Your personalized performance breakdown will appear here.
                 </p>
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white p-3 rounded border border-gray-200">
-                        <h4 className="font-medium text-gray-700 mb-1">Problem Analysis</h4>
-                        <p className="text-sm text-gray-500">Coming soon</p>
-                    </div>
-                    <div className="bg-white p-3 rounded border border-gray-200">
-                        <h4 className="font-medium text-gray-700 mb-1">Skill Breakdown</h4>
-                        <p className="text-sm text-gray-500">Coming soon</p>
-                    </div>
-                </div>
+              
             </div>
         </div>
     );

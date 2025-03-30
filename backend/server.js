@@ -9,10 +9,11 @@ import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
 import userAuth from './middleware/userAuth.js';
 import testAuth from './middleware/testAuth.js';
+import MockTest from './models/MockTest.model.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
 import axios from 'axios';
-import { select } from 'three/tsl';
+
 
 
 const app = express();
@@ -178,7 +179,7 @@ app.get('/user-data', userAuth, async (req, res) => {
       const user = await User.findById(userId);
       if (user) {
         const { name, email } = user;
-        return res.status(200).json({ name, email });
+        return res.status(200).json({ name, email, userId });
       }
     }
 
@@ -224,7 +225,7 @@ app.post("/google-login", async (req, res) => {
       {
         // Generate a session JWT token using Google's sub as id
         const sessionToken = jwt.sign(
-          { id: sub, name: name },
+          { id: existingUser._id, name: name },
           process.env.JWT_SECRET,
           { expiresIn: "30d" }
         );
@@ -411,35 +412,87 @@ app.post("/get-token", async (req, res) => {
 
 app.post("/test-questions", testAuth, async (req, res) => {
   
-  const {selectedTags, lowerBound, upperBound, problems} = req.body;
+  const {selectedTags, lowerBound, upperBound, problems, userId, testId} = req.body;
 
   try {
-    // If problems already exist in the testToken, return those instead of generating new ones
-    if (problems && Array.isArray(problems) && problems.length > 0) {
-      // Fetch all problems to get full details
-      const response = await axios.get('https://codeforces.com/api/problemset.problems');
-      const allProblems = response.data.result.problems;
+    // Handle existing test from testId (page refresh case)
+    if (testId) {
+      // Try to find the test in MongoDB
+      const existingTest = await MockTest.findById(testId);
+
       
-      // Find the full problem details for each problem identifier
-      const testQuestions = problems.map(problem => {
-        const fullProblem = allProblems.find(p => 
-          p.contestId === problem.contestId && p.index === problem.index
-        );
+      if (existingTest) {
+        // Fetch all problems to get full details
+        const response = await axios.get('https://codeforces.com/api/problemset.problems');
+        const allProblems = response.data.result.problems;
         
-        return fullProblem || problem; // Fallback to the identifier if full problem not found
-      }).filter(problem => problem); // Remove any undefined entries
-      
-      if (testQuestions.length > 0) {
-        return res.status(200).json({
-          message: "Test questions retrieved from cookie",
-          testQuestions,
-          fromCookie: true
-        });
+        // Extract the question identifiers from MongoDB
+        const testProblems = existingTest.questions.map(q => ({
+          contestId: q.contestId,
+          index: q.index,
+          name: q.title,
+        }));
+        
+        // Find the full problem details for each problem identifier
+        const testQuestions = testProblems.map(problem => {
+          const fullProblem = allProblems.find(p => 
+            p.contestId === problem.contestId && p.index === problem.index
+          );
+          
+          return fullProblem || problem; // Fallback to the identifier if full problem not found
+        }).filter(problem => problem); // Remove any undefined entries
+        
+        if (testQuestions.length === 4) {
+          return res.status(200).json({
+            message: "Test questions retrieved from MongoDB",
+            testQuestions,
+            testId,
+            fromCookie: true
+          });
+        }
       }
-      // If we couldn't find the problems, continue to generate new ones
+      else{
+        // Test not found in MongoDB, handle accordingly
+        return res.status(404).json({ message: "Test not found in mongoDB but is in cookie" });
+      }
+      // If test not found in MongoDB or questions couldn't be fetched, continue to create new test
+    }
+    
+    // Handle case where problems are in the cookie but no testId
+    // if (!testId && problems && Array.isArray(problems) && problems.length > 0) {
+    //   // Fetch all problems to get full details
+    //   const response = await axios.get('https://codeforces.com/api/problemset.problems');
+    //   const allProblems = response.data.result.problems;
+      
+    //   // Find the full problem details for each problem identifier
+    //   const testQuestions = problems.map(problem => {
+    //     const fullProblem = allProblems.find(p => 
+    //       p.contestId === problem.contestId && p.index === problem.index
+    //     );
+        
+    //     return fullProblem || problem; // Fallback to the identifier if full problem not found
+    //   }).filter(problem => problem); // Remove any undefined entries
+      
+    //   if (testQuestions.length > 0) {
+    //     return res.status(200).json({
+    //       message: "Test questions retrieved from cookie",
+    //       testQuestions,
+    //       fromCookie: true
+    //     });
+    //   }
+    // }
+
+    // If we reach here, no valid existing test was found
+    // Create a new test with the provided parameters
+    
+    // Validation: Make sure we have the required parameters
+    if (!selectedTags || !lowerBound || !upperBound) {
+      return res.status(400).json({
+        message: "Missing required parameters for new test creation"
+      });
     }
 
-    // If no valid problems in cookie, generate new ones
+    // Generate new questions
     const response = await axios.get('https://codeforces.com/api/problemset.problems');
     const allProblems = response.data.result.problems;
     
@@ -480,14 +533,24 @@ app.post("/test-questions", testAuth, async (req, res) => {
       }
     }
 
-    const problemIdentifiers = testQuestions.map(question => ({
-      contestId: question.contestId,
-      index: question.index
-    }));
+    // Save the test to MongoDB
+    const newTest = new MockTest({
+      userId: userId,
+      questions: testQuestions.map(question => ({
+        index: question.index,
+        contestId: question.contestId,
+        title: question.name,
+        difficulty: question.rating,
+        tags: question.tags
+      })),
+      responses: [] // Empty initially
+    });
+
+    const savedTest = await newTest.save();
 
     const testToken = jwt.sign(
       { 
-        problems: problemIdentifiers,
+        testId: savedTest._id
       },
       process.env.JWT_SECRET,
       { 
@@ -505,6 +568,7 @@ app.post("/test-questions", testAuth, async (req, res) => {
     return res.status(200).json({
       message: "Test questions fetched", 
       testQuestions,
+      testId: savedTest._id,
       fromCookie: false
     });
 
