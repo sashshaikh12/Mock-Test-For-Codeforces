@@ -14,7 +14,8 @@ const mockTestSchema = mongoose.Schema({
         index: String,
         status: String, // "AC", "WA", "TLE", etc.
         timeTaken: Number, // in seconds
-      }]
+      }],
+    shareableLink: { type: String, index: true, unique: true },
 });
 
 const MockTest = mongoose.model("MockTest", mockTestSchema);

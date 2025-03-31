@@ -20,7 +20,7 @@ function App() {
         <Route path="/mock-test-setup" element={<ProtectedRoutes> <MockTestSetup /> </ProtectedRoutes>} />
         <Route path="/mock-test-dashboard" element={<ProtectedRoutes> <MockTestDashboard /> </ProtectedRoutes>} />
         <Route path="/codeforces-verify" element={<CodeforcesVerify />} />
-        <Route path="/test-report" element={<TestReport />} />
+        <Route path="/test-report/:token" element={<TestReport />} />
       </Routes>
     </BrowserRouter>
   )

@@ -110,6 +110,22 @@ function MockTestDashboard() {
     );
   };
 
+  const handleEndTest = async () => {
+    try {
+      const response = await fetch('http://localhost:5000/submit-test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include'
+      });
+  
+      const { reportLink } = await response.json();
+      console.log(reportLink);
+      navigate(reportLink); // Redirect to token-based URL
+    } catch (error) {
+      console.error('Submission error:', error);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-4xl mx-auto">
@@ -185,6 +201,7 @@ function MockTestDashboard() {
             )}
             <div className="flex justify-center mt-6">
                     <button
+                    onClick={handleEndTest}
                       className="px-6 py-3 bg-indigo-600 text-white font-medium rounded-lg shadow-sm hover:bg-indigo-700 transition-colors hover:cursor-pointer"
                     >
                       End Test

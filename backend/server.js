@@ -13,6 +13,7 @@ import MockTest from './models/MockTest.model.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
 import axios from 'axios';
+import crypto from 'crypto';
 
 
 
@@ -575,6 +576,30 @@ app.post("/test-questions", testAuth, async (req, res) => {
   } catch(error) {
     console.error("Error fetching test questions:", error);
     res.status(500).json({message: "Server Could not fetch test questions"});
+  }
+});
+
+app.post('/submit-test', testAuth, async (req, res) => {
+  try {
+    const {testId} = req.body;
+    const test = await MockTest.findById(testId);
+
+    // Generate a shareable token (alternative to cookie)
+    const reportToken = crypto.randomBytes(16).toString('hex');
+    test.shareableLink = reportToken;
+    await test.save();
+
+    res.clearCookie('testToken',{
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'strict'
+    });
+    res.json({ 
+      success: true,
+      reportLink: `/test-report/${reportToken}` // Use token instead of testId
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Submission failed' });
   }
 });
 

@@ -1,4 +1,5 @@
 import React from "react";
+import videoSrc from "../assets/Editorial.mp4"; 
 
 function TestReport() {
     return (
@@ -25,7 +26,7 @@ function TestReport() {
                         controls
                         muted
                     >
-                        <source src="src/assets/Editorial.mp4" type="video/mp4" />
+                        <source src={videoSrc} type="video/mp4" />
                         Your browser does not support the video tag.
                     </video>
                     
