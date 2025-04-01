@@ -120,7 +120,7 @@ function MockTestDashboard() {
   
       const { reportLink } = await response.json();
       console.log(reportLink);
-      navigate(reportLink); // Redirect to token-based URL
+      navigate(reportLink, {replace: true}); // Redirect to token-based URL
     } catch (error) {
       console.error('Submission error:', error);
     }

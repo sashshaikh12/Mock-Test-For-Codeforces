@@ -603,6 +603,17 @@ app.post('/submit-test', testAuth, async (req, res) => {
   }
 });
 
+app.get('/api/tests/by-token/:token', async (req, res) => {
+  try {
+    const test = await MockTest.findOne({ shareableLink: req.params.token });
+
+    if (!test) return res.status(404).json({ error: 'Test not found' });
+    res.json({message: "Test fetched", questions: test.questions});
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(5000, () => {
 connectDB();
   console.log('backend Server started');
