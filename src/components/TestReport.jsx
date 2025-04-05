@@ -1,12 +1,16 @@
-import {React, useState, useEffect} from "react";
+import {React, useState, useEffect, PureComponent} from "react";
 import videoSrc from "../assets/Editorial.mp4"; 
 import { useParams } from 'react-router-dom';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
 
 function TestReport() {
     const { token } = useParams();
     const [testData, setTestData] = useState(null);
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
+    const [data, setData] = useState([]);
+
 
     useEffect(() => {
         const fetchTest = async () => {
@@ -16,9 +20,26 @@ function TestReport() {
             });
             const data = await res.json();
             setTestData(data.questions);
+            // Transform data here
+            const chartData = data.questions.map((question) => ({
+                name: question.title ? question.title : "",
+                Time_Taken: question.time_taken ? question.time_taken : 0,
+            }));
+            setData(chartData);
         };
         fetchTest();
     }, [token]);
+
+    if (!testData) {
+        return (
+            <div className="bg-white rounded-lg shadow-sm p-8 text-center">
+                <div className="flex justify-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+                </div>
+                <p className="mt-4 text-gray-600">Fetching your test Report...</p>
+            </div>
+        );
+    }
 
     const handleSeeDetails = (question) => {
         setSelectedQuestion(question);
@@ -30,6 +51,7 @@ function TestReport() {
         setSelectedQuestion(null);
     };
 
+
     if (showDetails && selectedQuestion) {
         return (
             <div className="max-w-4xl mx-auto my-8 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -37,7 +59,7 @@ function TestReport() {
                     <h2 className="text-2xl font-bold text-gray-800">{selectedQuestion.name}</h2>
                     <button 
                         onClick={handleCloseDetails}
-                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors hover:cursor-pointer"
                     >
                         ← Back to Report
                     </button>
@@ -47,27 +69,20 @@ function TestReport() {
                     <h3 className="text-lg font-semibold text-gray-800 mb-4">Question Details</h3>
                     <div className="space-y-4">
                         <div>
-                            <h4 className="font-medium text-gray-700">Problem Link:</h4>
-                            <a 
-                                href={selectedQuestion.link} 
-                                target="_blank" 
-                                rel="noopener noreferrer"
-                                className="text-blue-600 hover:underline"
-                            >
-                                {selectedQuestion.link}
-                            </a>
+                            <h4 className="font-medium text-gray-700 inline-block mr-2">Problem Difficulty:</h4>
+                            <span className="text-gray-600">{selectedQuestion.difficulty}</span>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-700">Your Attempts:</h4>
-                            <p className="text-gray-600">3 attempts (2 wrong, 1 correct)</p>
+                            <h4 className="font-medium text-gray-700 inline-block mr-2">Status:</h4>
+                            <span className="text-gray-600">Not solved</span>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-700">Time Spent:</h4>
-                            <p className="text-gray-600">25 minutes</p>
+                            <h4 className="font-medium text-gray-700 inline-block mr-2">Time Spent:</h4>
+                            <span className="text-gray-600">00:15:00</span>
                         </div>
                         <div>
-                            <h4 className="font-medium text-gray-700">Difficulty:</h4>
-                            <p className="text-gray-600">Medium</p>
+                            <h4 className="font-medium text-gray-700 inline-block mr-2">Tags:</h4>
+                            <span className="text-gray-600">{selectedQuestion.tags}</span>
                         </div>
                     </div>
                 </div>
@@ -94,6 +109,9 @@ function TestReport() {
                 <p className="text-gray-500 mt-3">Detailed performance analysis and results</p>
             </div>
 
+            <h1>Percentage: </h1>
+            <h1>total Time Taken: </h1>
+
             {/* Questions List */}
             {testData && (
                 <div className="mb-8">
@@ -102,12 +120,12 @@ function TestReport() {
                         {testData.map((question, index) => (
                             <div key={index} className="bg-gray-50 p-4 rounded-lg border border-gray-200 flex justify-between items-center">
                                 <div>
-                                    <h3 className="font-medium text-gray-800">{question.name}</h3>
+                                    <h3 className="text-xl text-gray-800">{question.title}</h3>
                                     <p className="text-sm text-gray-500 mt-1">Problem {index + 1} of {testData.length}</p>
                                 </div>
-                                <div className="flex space-x-2">
+                                <div className="flex space-x-2 hover:cursor-pointer">
                                     <a 
-                                        href={question.link} 
+                                        href={`https://codeforces.com/contest/${question.contestId}/problem/${question.index}`} 
                                         target="_blank" 
                                         rel="noopener noreferrer"
                                         className="px-4 py-2 bg-blue-100 text-blue-700 rounded-md hover:bg-blue-200 transition-colors"
@@ -116,7 +134,7 @@ function TestReport() {
                                     </a>
                                     <button 
                                         onClick={() => handleSeeDetails(question)}
-                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors"
+                                        className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors hover:cursor-pointer"
                                     >
                                         See Details
                                     </button>
@@ -128,7 +146,7 @@ function TestReport() {
             )}
 
             {/* Editorial Section */}
-            <div className="mb-12">
+            <div className="mb-12 mt-10">
                 <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
                     <span className="mr-2">📚</span>
                     How to View Editorials for the Test Questions
@@ -160,6 +178,44 @@ function TestReport() {
                     </div>
                 </div>
             </div>
+
+            {/* Bar Chart for time taken per question */}
+
+            {data.length > 0 ? (
+                <div style={{ width: '100%', height: 300 }}>
+                    <ResponsiveContainer>
+                        {/* Chart code here */}
+                        <BarChart
+                            data={data}
+                            margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                            }}
+                            >
+                            <XAxis 
+                                dataKey="name" 
+                                scale="point" 
+                                padding={{ left: 50, right: 10 }}
+                                angle={-45} // Angle the labels
+                                textAnchor="end" // Align angled text better
+                                height={60} // Give more room for angled labels
+                                tick={{ fontSize: 12 }} // Smaller font on mobile
+                            />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <Bar dataKey="Time_Taken" fill="#8884d8" background={{ fill: '#9933ff' }} maxBarSize={50} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <p className="text-gray-500 text-center">No time data available for chart</p>
+            )}
+            
+
         </div>
     );
 }
