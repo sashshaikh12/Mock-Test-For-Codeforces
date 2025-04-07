@@ -183,6 +183,42 @@ function TestReport() {
                 </div>
             </div>
 
+            {/* Bar Chart for time taken per question */}
+
+            {data.length > 0 ? (
+                <div style={{ width: '100%', height: '300px' }} className="my-16">
+                    <ResponsiveContainer>
+                        {/* Chart code here */}
+                        <BarChart
+                            data={data}
+                            margin={{
+                                top: 5,
+                                right: 30,
+                                left: 20,
+                                bottom: 5,
+                            }}
+                            >
+                            <XAxis 
+                                dataKey="name" 
+                                scale="point" 
+                                padding={{ left: 50, right: 10 }}
+                                angle={-45} // Angle the labels
+                                textAnchor="end" // Align angled text better
+                                height={60} // Give more room for angled labels
+                                tick={{ fontSize: 12 }} // Smaller font on mobile
+                            />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend wrapperStyle={{ fontSize: '12px' }} />
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <Bar dataKey="Time_Taken" fill="#8884d8" background={{ fill: '#9933ff' }} maxBarSize={50} />
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+            ) : (
+                <p className="text-gray-500 text-center">No time data available for chart</p>
+            )}
+
             {/* Questions List */}
             {testData && (
                 <div className="mb-8">
@@ -250,42 +286,23 @@ function TestReport() {
                 </div>
             </div>
 
-            {/* Bar Chart for time taken per question */}
-
-            {data.length > 0 ? (
-                <div style={{ width: '100%', height: 300 }}>
-                    <ResponsiveContainer>
-                        {/* Chart code here */}
-                        <BarChart
-                            data={data}
-                            margin={{
-                                top: 5,
-                                right: 30,
-                                left: 20,
-                                bottom: 5,
-                            }}
-                            >
-                            <XAxis 
-                                dataKey="name" 
-                                scale="point" 
-                                padding={{ left: 50, right: 10 }}
-                                angle={-45} // Angle the labels
-                                textAnchor="end" // Align angled text better
-                                height={60} // Give more room for angled labels
-                                tick={{ fontSize: 12 }} // Smaller font on mobile
-                            />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <Bar dataKey="Time_Taken" fill="#8884d8" background={{ fill: '#9933ff' }} maxBarSize={50} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : (
-                <p className="text-gray-500 text-center">No time data available for chart</p>
-            )}
-            
+            {/* Actions Buttons */}
+            <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
+                <a 
+                    href="https://codeforces.com/problemset" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium text-center rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
+                >
+                    Practice More Problems
+                </a>
+                <a 
+                    href="/home" 
+                    className="w-full sm:w-auto px-6 py-3 bg-gray-100 text-gray-800 font-medium text-center rounded-lg shadow-sm border border-gray-300 hover:bg-gray-200 transition-colors"
+                >
+                    Back to Home
+                </a>
+            </div>
 
         </div>
     );
