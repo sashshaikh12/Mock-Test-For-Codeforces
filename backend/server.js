@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser';
 import userAuth from './middleware/userAuth.js';
 import testAuth from './middleware/testAuth.js';
 import MockTest from './models/MockTest.model.js';
+import FavouriteQuestion from './models/FavouriteQuestion.model.js';
 import { OAuth2Client } from 'google-auth-library';
 import mongoose from 'mongoose';
 import axios from 'axios';
@@ -667,6 +668,48 @@ app.get('/get-test-notes/:testId', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+app.post('/get-favourite-questions', userAuth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+
+    // Fetch favourite questions from the database
+    const favouriteQuestions = await FavouriteQuestion.find({ userId });
+
+    if (!favouriteQuestions || favouriteQuestions.length === 0) {
+      return res.status(404).json({ message: 'No favourite questions found' });
+    }
+
+    res.status(200).json({ message: "Favourite questions fetched", favouriteQuestions });
+  } catch (error) {
+    console.error('Error fetching favourite questions:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+);
+
+app.post('/add-favourite-question', userAuth, async (req, res) => {
+  try {
+    const { userId, question } = req.body;
+
+    // Check if the question already exists for the user
+    const existingQuestion = await FavouriteQuestion.findOne({ userId, question });
+
+    if (existingQuestion) {
+      return res.status(400).json({ message: 'Question already exists in favourites' });
+    }
+
+    // Create a new favourite question
+    const favouriteQuestion = new FavouriteQuestion({ userId, question });
+    await favouriteQuestion.save();
+
+    res.status(200).json({ message: 'Question added to favourites' });
+  } catch (error) {
+    console.error('Error adding favourite question:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+);
 
 app.listen(5000, () => {
 connectDB();

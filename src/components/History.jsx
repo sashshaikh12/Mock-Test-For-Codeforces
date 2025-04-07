@@ -153,41 +153,10 @@ function History() {
         setShowNotesModal(false);
     };
 
-    // Modal for notes
-    const NotesModal = () => (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl">
-                <h2 className="text-xl font-bold mb-4">
-                    Notes for Test #{selectedTest ? tests.length - tests.findIndex(t => t._id === selectedTest._id) : ''}
-                </h2>
-                <textarea
-                    className="w-full h-64 p-3 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    placeholder="Write your notes here..."
-                    value={currentNote}
-                    onChange={(e) => setCurrentNote(e.target.value)}
-                ></textarea>
-                <div className="flex justify-end mt-4 space-x-3">
-                    <button
-                        onClick={() => setShowNotesModal(false)}
-                        className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 hover:cursor-pointer"
-                    >
-                        Cancel
-                    </button>
-                    <button
-                        onClick={handleSaveNotes}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 hover:cursor-pointer"
-                    >
-                        Save Notes
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
-                <Navbar />
                 <div className="max-w-6xl mx-auto mt-16 text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading your test history...</p>
@@ -199,7 +168,6 @@ function History() {
     if (error) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
-                <Navbar />
                 <div className="max-w-6xl mx-auto mt-16 text-center">
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
                         <p>Error: {error}</p>
