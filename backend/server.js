@@ -614,6 +614,20 @@ app.get('/api/tests/by-token/:token', async (req, res) => {
   }
 });
 
+app.post('/mock-test-history', userAuth, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const tests = await MockTest.find({ userId });
+    if (!tests || tests.length === 0) {
+      return res.status(404).json({ error: 'No tests found for this user' });
+    }
+    // Return the tests with only the required fields
+    res.json({message: "Tests fetched", tests});
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
 app.listen(5000, () => {
 connectDB();
   console.log('backend Server started');
