@@ -628,6 +628,46 @@ app.post('/mock-test-history', userAuth, async (req, res) => {
   }
 });
 
+app.post('/save-notes', async (req, res) => {
+  try {
+    const { testId, notes } = req.body;
+
+    // Find the test by ID and update the notes
+    const updatedTest = await MockTest.findByIdAndUpdate(
+      testId,
+      { testNotes: notes },
+      { new: true }
+    );
+
+    if (!updatedTest) {
+      return res.status(404).json({ message: 'Test not found' });
+    }
+
+    res.status(200).json({ message: 'Notes saved successfully', notes: updatedTest.testNotes });
+  } catch (error) {
+    console.error('Error saving notes:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+);
+
+app.get('/get-test-notes/:testId', async (req, res) => {
+  try {
+    const { testId } = req.params;
+    const test = await MockTest.findById(testId);
+    
+    if (!test) {
+      return res.status(404).json({ message: 'Test not found' });
+    }
+    
+    // Return just the notes
+    res.status(200).json({ notes: test.testNotes || '' });
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.listen(5000, () => {
 connectDB();
   console.log('backend Server started');
