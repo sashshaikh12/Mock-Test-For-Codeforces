@@ -2,13 +2,15 @@ import mongoose from "mongoose";
 
 const favouriteQuestionSchema = mongoose.Schema({
     userId: mongoose.Schema.Types.ObjectId,
-    questions: [{
-      index: String, 
-      contestId: String, 
-      title: String,
-      difficulty: Number,
-      tags: [String]
-    }],
+    contestId: String,
+    index: String,
+    question: {
+        contestId: String,
+        index: String,
+        title: String,
+        difficulty: Number,
+        tags: [String]
+    }
 });
 
 const FavouriteQuestion = mongoose.model("FavouriteQuestion", favouriteQuestionSchema);

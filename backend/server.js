@@ -200,6 +200,7 @@ app.get('/user-data', userAuth, async (req, res) => {
 
 app.post("/google-login", async (req, res) => {
   const { token } = req.body;
+  console.log(token);
 
   try {
     // Verify the Google token
@@ -457,35 +458,8 @@ app.post("/test-questions", testAuth, async (req, res) => {
         // Test not found in MongoDB, handle accordingly
         return res.status(404).json({ message: "Test not found in mongoDB but is in cookie" });
       }
-      // If test not found in MongoDB or questions couldn't be fetched, continue to create new test
     }
     
-    // Handle case where problems are in the cookie but no testId
-    // if (!testId && problems && Array.isArray(problems) && problems.length > 0) {
-    //   // Fetch all problems to get full details
-    //   const response = await axios.get('https://codeforces.com/api/problemset.problems');
-    //   const allProblems = response.data.result.problems;
-      
-    //   // Find the full problem details for each problem identifier
-    //   const testQuestions = problems.map(problem => {
-    //     const fullProblem = allProblems.find(p => 
-    //       p.contestId === problem.contestId && p.index === problem.index
-    //     );
-        
-    //     return fullProblem || problem; // Fallback to the identifier if full problem not found
-    //   }).filter(problem => problem); // Remove any undefined entries
-      
-    //   if (testQuestions.length > 0) {
-    //     return res.status(200).json({
-    //       message: "Test questions retrieved from cookie",
-    //       testQuestions,
-    //       fromCookie: true
-    //     });
-    //   }
-    // }
-
-    // If we reach here, no valid existing test was found
-    // Create a new test with the provided parameters
     
     // Validation: Make sure we have the required parameters
     if (!selectedTags || !lowerBound || !upperBound) {
@@ -690,17 +664,26 @@ app.post('/get-favourite-questions', userAuth, async (req, res) => {
 
 app.post('/add-favourite-question', userAuth, async (req, res) => {
   try {
-    const { userId, question } = req.body;
+    const { userId, contestId, index, question } = req.body;
 
     // Check if the question already exists for the user
-    const existingQuestion = await FavouriteQuestion.findOne({ userId, question });
+    const existingQuestion = await FavouriteQuestion.findOne({ 
+      userId, 
+      contestId, 
+      index 
+    });
 
     if (existingQuestion) {
       return res.status(400).json({ message: 'Question already exists in favourites' });
     }
 
-    // Create a new favourite question
-    const favouriteQuestion = new FavouriteQuestion({ userId, question });
+    // Create a new favourite question with the complete data
+    const favouriteQuestion = new FavouriteQuestion({ 
+      userId, 
+      contestId, 
+      index,
+      question
+    });
     await favouriteQuestion.save();
 
     res.status(200).json({ message: 'Question added to favourites' });
@@ -708,8 +691,7 @@ app.post('/add-favourite-question', userAuth, async (req, res) => {
     console.error('Error adding favourite question:', error);
     res.status(500).json({ message: 'Server error' });
   }
-}
-);
+});
 
 app.listen(5000, () => {
 connectDB();
