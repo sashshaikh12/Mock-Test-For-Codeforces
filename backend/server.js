@@ -200,7 +200,6 @@ app.get('/user-data', userAuth, async (req, res) => {
 
 app.post("/google-login", async (req, res) => {
   const { token } = req.body;
-  console.log(token);
 
   try {
     // Verify the Google token
