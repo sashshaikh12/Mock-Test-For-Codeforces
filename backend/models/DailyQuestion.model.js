@@ -11,6 +11,7 @@ const DailyQuestionSchema = new mongoose.Schema({
     index: { type: String},
     name: { type: String},
     rating: { type: Number },
+    tags: { type: [String] },
   },
 });
 

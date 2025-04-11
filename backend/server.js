@@ -297,6 +297,7 @@ app.get('/daily-question', async (req, res) => {
       }
     });
 
+
     if (question) {
       return res.json({ success: true, question });
     }
@@ -691,6 +692,29 @@ app.post('/add-favourite-question', userAuth, async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
+
+app.post('/remove-favourite-question', userAuth, async (req,res) => {
+  try {
+    const { userId, contestId, index } = req.body;
+
+    // Find and remove the question from the database
+    const result = await FavouriteQuestion.findOneAndDelete({ 
+      userId, 
+      contestId, 
+      index 
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: 'Question not found in favourites' });
+    }
+
+    res.status(200).json({ message: 'Question removed from favourites' });
+  } catch (error) {
+    console.error('Error removing favourite question:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}); 
+
 
 // Save notes for a question
 app.post('/save-question-notes', async (req, res) => {

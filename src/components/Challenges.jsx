@@ -1,5 +1,6 @@
 import {React, useState, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
+import { FaStar, FaRegStar } from "react-icons/fa";
 
 function Challenges() {
 
@@ -9,6 +10,9 @@ function Challenges() {
     const [DailyProblemRating, setDailyProblemRating] = useState(0);
     const [ContestID, setContestID] = useState(0);
     const [index, setIndex] = useState("");
+    const [tags, setTags] = useState([]);
+    const [favAdded, setFavAdded] = useState(false);
+    const [favourites, setFavourites] = useState([]);
 
     useEffect(() => {
         const fetchRandomProblem = async () => {
@@ -25,9 +29,105 @@ function Challenges() {
           setDailyProblemRating(result.question.problem.rating);
           setContestID(result.question.problem.contestId);
           setIndex(result.question.problem.index);
+          setTags(result.question.problem.tags);
+
+          fetchFavourites(result.question.problem.contestId, result.question.problem.index);
+
         };  
         fetchRandomProblem();
       }, []);
+
+
+      const fetchFavourites = async (contestId, problemIndex) => {
+        try {
+            const response = await fetch("http://localhost:5000/get-favourite-questions", {
+                method: "post",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            
+            if (response.status === 404) {
+                // No favorites found
+                setFavourites([]);
+                setFavAdded(false);
+                return;
+            }
+            
+            if (response.status !== 200) {
+                throw new Error("Failed to fetch favourites");
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.favouriteQuestions) {
+                setFavourites(data.favouriteQuestions);
+                
+                // Check if daily problem is in favorites
+                const isDailyProblemFavorite = data.favouriteQuestions.some(fav => 
+                    fav.contestId == contestId && 
+                    fav.index == problemIndex
+                );
+                
+                setFavAdded(isDailyProblemFavorite);
+            }
+        } catch (error) {
+            console.error("Error fetching favourites:", error);
+        }
+    };
+
+    // Function to toggle favorite status
+    const toggleFavorite = async () => {
+        if (!ContestID || !index) return;
+        
+        try {
+            if (favAdded) {
+                // Remove from favorites
+                const response = await fetch("http://localhost:5000/remove-favourite-question", {
+                    method: "post",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        contestId: ContestID,
+                        index: index,
+                    }),
+                });
+                if (response.status === 200) {
+                    setFavAdded(false);
+                }
+            } else {
+                // Add to favorites
+                const response = await fetch("http://localhost:5000/add-favourite-question", {
+                    method: "post",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        contestId: ContestID,
+                        index: index,
+                        question: {
+                            contestId: ContestID,
+                            index: index,
+                            title: DailyProblem,
+                            difficulty: DailyProblemRating,
+                            tags: tags 
+                        }
+                    }),
+                });
+                
+                if (response.status === 200) {
+                    setFavAdded(true);
+                }
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+        }
+    };
+
 
       const handleDailyChallenge = async () => {
         const url = `https://codeforces.com/contest/${ContestID}/problem/${index}`;
@@ -50,10 +150,23 @@ function Challenges() {
                         <div className="flex items-center mb-4">
                             <div className="bg-blue-100 p-3 rounded-full mr-4">
                                 <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    <path strokeLinecap="ro und" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                                 </svg>
                             </div>
                             <h2 className="text-2xl font-semibold text-gray-800">Daily Challenge</h2>
+                            
+                            {/* Toggle favorite button */}
+                            <button 
+                                onClick={toggleFavorite} 
+                                className="ml-auto flex items-center justify-center"
+                            >
+                                {favAdded ? (
+                                    <FaStar size={26} className="text-yellow-500" />
+                                ) : (
+                                    <FaRegStar size={26} className="text-gray-400 hover:text-yellow-500" />
+                                )}
+                            </button>
+
                         </div>
                         <p className="text-gray-600 mb-6">
                             A new problem every day to keep your skills sharp. Solve today's challenge to maintain your streak!
@@ -64,6 +177,9 @@ function Challenges() {
                         </div>
                         <button onClick = {handleDailyChallenge}  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
                             Start Today's Challenge
+                        </button>
+                        <button onClick = {handleDailyChallenge}  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium mt-4 py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
+                            Accepted
                         </button>
                     </div>
                 </div>
@@ -112,7 +228,7 @@ function Challenges() {
                         <h4 className="font-medium text-purple-600 mb-2">Speed Code Mode</h4>
                         <p className="text-gray-600">
                             Simulate competition conditions with timed challenges. This mode helps you improve your coding speed, 
-                            quick thinking, and ability to perform under pressure - essential skills for coding interviews and contests.
+                            quick thinking, and ability form under pressure - essential skills for coding interviews and contests.
                         </p>
                     </div>
                 </div>
