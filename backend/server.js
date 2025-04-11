@@ -692,6 +692,47 @@ app.post('/add-favourite-question', userAuth, async (req, res) => {
   }
 });
 
+// Save notes for a question
+app.post('/save-question-notes', async (req, res) => {
+  try {
+    const { questionId, notes } = req.body;
+
+    // Find the question by ID and update the notes
+    const updatedQuestion = await FavouriteQuestion.findByIdAndUpdate(
+      questionId,
+      { favouriteNotes: notes },
+      { new: true }
+    );
+
+    if (!updatedQuestion) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+
+    res.status(200).json({ message: 'Notes saved successfully', notes: updatedQuestion.notes });
+  } catch (error) {
+    console.error('Error saving notes:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get notes for a question
+app.get('/get-question-notes/:questionId', async (req, res) => {
+  try {
+    const { questionId } = req.params;
+    const question = await FavouriteQuestion.findById(questionId);
+    
+    if (!question) {
+      return res.status(404).json({ message: 'Question not found' });
+    }
+    
+    // Return just the notes
+    res.status(200).json({ notes: question.favouriteNotes || '' });
+  } catch (error) {
+    console.error('Error fetching notes:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 app.listen(5000, () => {
 connectDB();
   console.log('backend Server started');

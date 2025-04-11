@@ -11,10 +11,6 @@ function Favourites() {
     const [questionNotes, setQuestionNotes] = useState({});
 
     useEffect(() => {
-        // Load saved notes from localStorage
-        const savedNotes = JSON.parse(localStorage.getItem('favouriteQuestionNotes') || '{}');
-        setQuestionNotes(savedNotes);
-        
         // Fetch user data first
         const fetchUserData = async () => {
             try {
@@ -74,6 +70,15 @@ function Favourites() {
     
             if(data && data.favouriteQuestions) {
                 setFavourites([...data.favouriteQuestions]);
+                
+                // Initialize notes state from the fetched data
+                const notesObj = {};
+                data.favouriteQuestions.forEach(q => {
+                    if (q.notes) {
+                        notesObj[q._id] = q.notes;
+                    }
+                });
+                setQuestionNotes(notesObj);
             }
         } catch (err) {
             setError(err.message);
@@ -92,31 +97,73 @@ function Favourites() {
         }
     };
     
-    const handleMakeNotes = (question) => {
-        setSelectedQuestion(question);
-        setCurrentNote(questionNotes[question._id] || "");
-        setShowNotesModal(true);
+    const handleMakeNotes = async (question) => {
+        try {
+            setSelectedQuestion(question);
+            
+            // Fetch existing notes for this question
+            const response = await fetch(`http://localhost:5000/get-question-notes/${question._id}`, {
+                method: "GET",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                }
+            });
+            
+            if (response.ok) {
+                const data = await response.json();
+                const savedNote = data.notes || "";
+                setCurrentNote(savedNote);
+                setQuestionNotes(prev => ({
+                    ...prev,
+                    [question._id]: savedNote
+                }));
+            }
+            
+            setShowNotesModal(true);
+        } catch (err) {
+            console.error("Error fetching notes:", err);
+        }
     };
     
-    const handleSaveNotes = () => {
-        // Save notes to local state
-        setQuestionNotes(prev => ({
-            ...prev,
-            [selectedQuestion._id]: currentNote
-        }));
+    const handleSaveNotes = async () => {
+        if (!selectedQuestion) return;
         
-        // Save to localStorage for persistence
-        const savedNotes = JSON.parse(localStorage.getItem('favouriteQuestionNotes') || '{}');
-        savedNotes[selectedQuestion._id] = currentNote;
-        localStorage.setItem('favouriteQuestionNotes', JSON.stringify(savedNotes));
-        
-        setShowNotesModal(false);
+        try {
+            // Update local state immediately
+            const updatedNotes = {
+                ...questionNotes,
+                [selectedQuestion._id]: currentNote
+            };
+            setQuestionNotes(updatedNotes);
+            
+            // Save to backend
+            const response = await fetch("http://localhost:5000/save-question-notes", {
+                method: "post",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    questionId: selectedQuestion._id,
+                    notes: currentNote,
+                }),
+            });
+            
+            if (response.status !== 200) {
+                throw new Error("Failed to save notes");
+            }
+            
+            setShowNotesModal(false);
+        } catch (err) {
+            console.error("Error saving notes:", err);
+            // Optionally show error to user
+        }
     };
 
     if (loading) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
-                <Navbar />
                 <div className="max-w-6xl mx-auto mt-16 text-center">
                     <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
                     <p className="mt-4 text-gray-600">Loading your favourite questions...</p>
@@ -128,7 +175,6 @@ function Favourites() {
     if (error) {
         return (
             <div className="min-h-screen bg-gray-50 p-6">
-                <Navbar />
                 <div className="max-w-6xl mx-auto mt-16 text-center">
                     <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded">
                         <p>Error: {error}</p>
@@ -216,7 +262,7 @@ function Favourites() {
                                         </div>
                                     )}
                                     
-                                    {/* Notes preview */}
+                                    {/* Notes preview
                                     {questionNotes[favourite._id] && (
                                         <div className="mb-4 p-2 bg-yellow-50 border border-yellow-100 rounded text-sm text-gray-700">
                                             <div className="flex items-center mb-1">
@@ -227,7 +273,7 @@ function Favourites() {
                                             </div>
                                             <p className="text-xs line-clamp-2 italic">{questionNotes[favourite._id].substring(0, 100)}{questionNotes[favourite._id].length > 100 ? '...' : ''}</p>
                                         </div>
-                                    )}
+                                    )} */}
                                     
                                     {/* Action buttons */}
                                     <div className="grid grid-cols-2 gap-2 mt-4 pt-3 border-t border-gray-100">
@@ -235,13 +281,13 @@ function Favourites() {
                                             href={`https://codeforces.com/contest/${favourite.question.contestId}/problem/${favourite.question.index}`}
                                             target="_blank"
                                             rel="noopener noreferrer"
-                                            className="text-center py-2 bg-blue-50 text-blue-700 rounded border border-blue-200 text-sm font-medium hover:bg-blue-100 transition-colors"
+                                            className="text-center py-2 bg-blue-50 text-blue-700 rounded border border-blue-200 text-sm font-medium hover:bg-blue-100 transition-colors hover:cursor-pointer"
                                         >
                                             View Question
                                         </a>
                                         <button 
                                             onClick={() => handleMakeNotes(favourite)}
-                                            className="text-center py-2 bg-green-50 text-green-700 rounded border border-green-200 text-sm font-medium hover:bg-green-100 transition-colors"
+                                            className="text-center py-2 bg-green-50 text-green-700 rounded border border-green-200 text-sm font-medium hover:bg-green-100 transition-colors hover:cursor-pointer"
                                         >
                                             {questionNotes[favourite._id] ? "Edit Notes" : "Add Notes"}
                                         </button>

@@ -10,7 +10,8 @@ const favouriteQuestionSchema = mongoose.Schema({
         title: String,
         difficulty: Number,
         tags: [String]
-    }
+    },
+    favouriteNotes: String,
 });
 
 const FavouriteQuestion = mongoose.model("FavouriteQuestion", favouriteQuestionSchema);
