@@ -2,6 +2,7 @@ import {React, useState, useEffect, PureComponent} from "react";
 import videoSrc from "../assets/Editorial.mp4"; 
 import { useParams } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { FaStar, FaRegStar } from "react-icons/fa";
 
 
 function TestReport() {
@@ -10,6 +11,8 @@ function TestReport() {
     const [selectedQuestion, setSelectedQuestion] = useState(null);
     const [showDetails, setShowDetails] = useState(false);
     const [data, setData] = useState([]);
+    const [favourites, setFavourites] = useState([]);
+    const [favoriteMap, setFavoriteMap] = useState({});
 
 
     useEffect(() => {
@@ -26,9 +29,123 @@ function TestReport() {
                 Time_Taken: question.time_taken ? question.time_taken : 0,
             }));
             setData(chartData);
+            fetchFavourites();
         };
         fetchTest();
     }, [token]);
+
+    const fetchFavourites = async () => {
+        try {
+            const response = await fetch("http://localhost:5000/get-favourite-questions", {
+                method: "post",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            });
+            
+            if (response.status === 404) {
+                // No favorites found
+                setFavourites([]);
+                setFavoriteMap({});
+                return;
+            }
+            
+            if (response.status !== 200) {
+                throw new Error("Failed to fetch favourites");
+            }
+            
+            const data = await response.json();``
+            
+            if (data && data.favouriteQuestions) {
+                setFavourites(data.favouriteQuestions);
+                
+                // Create a map for quick lookup of favorites
+                const newFavoriteMap = {};
+                data.favouriteQuestions.forEach(fav => {
+                    const key = `${fav.question.contestId}-${fav.question.index}`;
+                    newFavoriteMap[key] = fav._id; // Store the favorite document ID for removal
+                });
+                setFavoriteMap(newFavoriteMap);
+            }
+        } catch (error) {
+            console.error("Error fetching favourites:", error);
+        }
+    };
+
+    const toggleFavorite = async (question, event) => {
+        // Prevent the click from triggering parent elements
+
+        if (event) {
+            event.stopPropagation();
+        }
+        
+        const favoriteKey = `${question.contestId}-${question.index}`;
+        const isFavorite = favoriteMap[favoriteKey];
+        
+        try {
+            if (isFavorite) {
+                // Remove from favorites, implement logic here
+
+                const response = await fetch("http://localhost:5000/remove-favourite-question", {
+                    method: "post",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        contestId: question.contestId,
+                        index: question.index,
+                    }),
+                });
+                if (response.status === 200) {
+                    const newFavoriteMap = { ...favoriteMap };
+                    delete newFavoriteMap[favoriteKey];
+                    setFavoriteMap(newFavoriteMap);
+                    
+                    // Also update the favorites array
+                    setFavourites(prev => prev.filter(fav => fav._id !== isFavorite));
+                }
+
+
+            } else {
+                // Add to favorites
+                const response = await fetch("http://localhost:5000/add-favourite-question", {
+                    method: "post",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        contestId: question.contestId,
+                        index: question.index,
+                        question: {
+                            contestId: question.contestId,
+                            index: question.index,
+                            title: question.title,
+                            difficulty: question.difficulty || 0,
+                            tags: question.tags || []
+                        }
+                    }),
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    
+                    // Update favorite map with the new favorite ID
+                    setFavoriteMap(prev => ({
+                        ...prev,
+                        [favoriteKey]: result.favouriteQuestion._id
+                    }));
+                    
+                    // Update favorites array
+                    setFavourites(prev => [...prev, result.favouriteQuestion]);
+                }
+            }
+        } catch (error) {
+            console.error("Error toggling favorite:", error);
+        }
+    };
 
     if (!testData) {
         return (
@@ -244,6 +361,16 @@ function TestReport() {
                                         className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 transition-colors hover:cursor-pointer"
                                     >
                                         See Details
+                                    </button>
+                                    <button
+                                        onClick={(e) => toggleFavorite(question, e)}
+                                        className="px-2 py-2 rounded-full hover:bg-gray-100"
+                                    >
+                                        {favoriteMap[`${question.contestId}-${question.index}`] ? (
+                                            <FaStar size={26} className="text-yellow-500" />
+                                        ) : (
+                                            <FaRegStar size={26} className="text-gray-400 hover:text-yellow-500" />
+                                        )}
                                     </button>
                                 </div>
                             </div>

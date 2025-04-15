@@ -158,7 +158,7 @@ function Challenges() {
                             {/* Toggle favorite button */}
                             <button 
                                 onClick={toggleFavorite} 
-                                className="ml-auto flex items-center justify-center"
+                                className="ml-auto flex items-center justify-center hover:cursor-pointer"
                             >
                                 {favAdded ? (
                                     <FaStar size={26} className="text-yellow-500" />

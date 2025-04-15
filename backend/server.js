@@ -682,11 +682,11 @@ app.post('/add-favourite-question', userAuth, async (req, res) => {
       userId, 
       contestId, 
       index,
-      question
+      question,
     });
     await favouriteQuestion.save();
 
-    res.status(200).json({ message: 'Question added to favourites' });
+    res.status(200).json({ message: 'Question added to favourites', favouriteQuestion });
   } catch (error) {
     console.error('Error adding favourite question:', error);
     res.status(500).json({ message: 'Server error' });
