@@ -86,11 +86,25 @@ function Favourites() {
         }
     };
 
-    const removeFavourite = async (questionId) => {
+    const removeFavourite = async (question) => {
         try {
             // Implement removal logic here
-            // Update UI optimistically
-            setFavourites(prev => prev.filter(q => q._id !== questionId));
+            console.log(question);
+            const response = await fetch("http://localhost:5000/remove-favourite-question", {
+                method: "post",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    contestId: question.contestId,
+                    index: question.index,
+                }),
+            });
+            if (response.status === 200) {
+                // Update UI optimistically
+                setFavourites(prev => prev.filter(q => q._id !== question._id));
+            }
         } catch (err) {
             setError(err.message);
             console.error(err);
@@ -215,7 +229,7 @@ function Favourites() {
                                 
                                 {/* Remove button */}
                                 <button 
-                                    onClick={() => removeFavourite(favourite._id)}
+                                    onClick={() => removeFavourite(favourite)}
                                     className="absolute top-3 right-3 text-gray-400 hover:text-red-500 transition-colors"
                                     aria-label="Remove from favorites"
                                 >
