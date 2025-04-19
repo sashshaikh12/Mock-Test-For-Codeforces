@@ -416,9 +416,7 @@ function TestReport() {
             {/* Actions Buttons */}
             <div className="mt-12 flex flex-col sm:flex-row justify-center gap-4">
                 <a 
-                    href="https://codeforces.com/problemset" 
-                    target="_blank" 
-                    rel="noopener noreferrer"
+                    href="/practice" 
                     className="w-full sm:w-auto px-6 py-3 bg-blue-600 text-white font-medium text-center rounded-lg shadow-sm hover:bg-blue-700 transition-colors"
                 >
                     Practice More Problems

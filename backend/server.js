@@ -284,6 +284,27 @@ app.get('/random-problem', async (req, res) => {
   }
 });
 
+app.get('/codeforces-all-questions', async (req, res) => {
+  try {
+    const response = await axios.get('https://codeforces.com/api/problemset.problems');
+    
+    // Get all problems
+    const allProblems = response.data.result.problems;
+    
+    // Filter problems to only keep those with a rating
+    const problemsWithRating = allProblems.filter(problem => problem.rating !== undefined && problem.rating >= 800 && problem.rating <= 2200);
+
+    return res.status(200).json({
+      message: "Problems fetched", 
+      problems: problemsWithRating,
+    });
+  } catch (error) {
+    console.error("Error fetching problems:", error);
+    return res.status(500).json({message: "Failed to fetch problems"});
+  }
+}
+);
+
 app.get('/daily-question', async (req, res) => {
   try {
     // Step 1: Check if today's question already exists

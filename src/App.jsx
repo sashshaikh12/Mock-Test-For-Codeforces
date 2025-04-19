@@ -9,6 +9,7 @@ import MockTestDashboard from "./components/MockTestDash";
 import TestReport from "./components/TestReport";
 import History from "./components/History";
 import Favourites from "./components/Favourites";
+import Practice from "./components/Practice";
 import { ProtectedRoutes } from "./components/ProtectedRoutes";
 
 function App() {
@@ -23,8 +24,9 @@ function App() {
         <Route path="/mock-test-dashboard" element={<ProtectedRoutes> <MockTestDashboard /> </ProtectedRoutes>} />
         <Route path="/history" element={<ProtectedRoutes> <History /> </ProtectedRoutes>} />
         <Route path="/favourites" element={<ProtectedRoutes> <Favourites /> </ProtectedRoutes>} />
+        <Route path="/practice" element={<ProtectedRoutes> <Practice /> </ProtectedRoutes>} />
         <Route path="/codeforces-verify" element={<CodeforcesVerify />} />
-        <Route path="/test-report/:token" element={<TestReport />} />
+        <Route path="/test-report/:token" element={<ProtectedRoutes> <TestReport /> </ProtectedRoutes>} />
       </Routes>
     </BrowserRouter>
   )
