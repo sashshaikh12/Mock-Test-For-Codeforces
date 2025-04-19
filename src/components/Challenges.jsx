@@ -1,6 +1,7 @@
 import {React, useState, useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import { FaStar, FaRegStar } from "react-icons/fa";
+import { set } from "mongoose";
 
 function Challenges() {
 
@@ -13,6 +14,8 @@ function Challenges() {
     const [tags, setTags] = useState([]);
     const [favAdded, setFavAdded] = useState(false);
     const [favourites, setFavourites] = useState([]);
+    const [handle, setHandle] = useState("");
+    const [dailySolved, setdailySolved] = useState(false);
 
     useEffect(() => {
         const fetchRandomProblem = async () => {
@@ -134,6 +137,106 @@ function Challenges() {
         window.open(url, "_blank").focus();
       };
 
+      const handleAccepted = async () => {
+        const fetchHandle = async () => {
+            try {
+                // setLoading(true);
+                const response = await fetch("http://localhost:5000/get-codeforces-handle", {
+                    method: "get",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                
+                if (response.status !== 200) {
+                    throw new Error("Failed to fetch codeforces handle");
+                }
+                
+                const userData = await response.json();
+  
+                if (!userData || !userData.codeforcesHandle) {
+                    console.log("handle not received.");
+                    return;
+                }
+                
+                // Now fetch test history with userId
+                if (userData.codeforcesHandle) {
+                    setHandle(userData.codeforcesHandle);
+                    await fetchLastSubmission(userData.codeforcesHandle);
+                }
+            } catch (err) {
+                setError(err.message);
+                console.error(err);
+            }
+        };
+        
+        fetchHandle();
+      };
+
+      const fetchLastSubmission = async (handle) => {
+        try {
+            const response = await fetch("http://localhost:5000/last-submission", {
+                method: "post",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    handle: handle,
+                }),
+            });
+            
+            if (response.status !== 200) {
+                throw new Error("Failed to fetch last submission");
+            }
+            
+            const data = await response.json();
+            
+            if (data && data.submission) {
+                if(data.submission.problem.contestId === ContestID && data.submission.problem.index === index) {
+                    if(data.submission.verdict === "OK") {
+                        setdailySolved(true);
+                        const response = await fetch("http://localhost:5000/update-user-stats", {
+                            method: "post",
+                            credentials: "include",
+                            headers: {
+                                "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({
+                                contestId: ContestID,
+                                index: index,
+                            }),
+                        });
+
+                        if(response.status === 400) {
+                            alert("This problem is already solved.");
+                            return;
+                        }
+
+                        if (response.status !== 200) {
+                            throw new Error("Failed to update solved problems");
+                        }
+    
+                        alert("Congrats on Solving the question!");
+                    }
+                    else
+                    {
+                        alert("Your Last Submission was not Accepted on this Problem!");
+                    }
+                }
+                else{
+                    alert("Your Last Submission was not Accepted on this Problem!");
+                }
+            }
+            else {
+                console.log("error fetching data details.");
+            }
+        } catch (error) {
+            console.error("Error fetching last submission:", error);
+        }
+    }
+
     return (
         <div className="max-w-6xl mx-auto px-4 py-8 mt-10">
             {/* Page Header */}
@@ -178,8 +281,16 @@ function Challenges() {
                         <button onClick = {handleDailyChallenge}  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
                             Start Today's Challenge
                         </button>
-                        <button onClick = {handleDailyChallenge}  className="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-medium mt-4 py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
-                            Accepted
+                        <button 
+                            onClick={handleAccepted}  
+                            disabled={dailySolved}
+                            className={`w-full font-medium mt-4 py-2 px-4 rounded-lg transition duration-300 ${
+                                dailySolved 
+                                    ? "bg-gray-400 cursor-not-allowed opacity-70 text-white" 
+                                    : "bg-emerald-500 hover:bg-emerald-600 text-white hover:cursor-pointer"
+                            }`}
+                        >
+                            {dailySolved ? "Already Solved!" : "Accepted"}
                         </button>
                     </div>
                 </div>

@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import {connectDB} from './config/db.js';
 import User from './models/user.model.js';
 import DailyQuestion from './models/DailyQuestion.model.js';
+import UserStats from './models/UserStats.model.js';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import cookieParser from 'cookie-parser';
@@ -189,6 +190,32 @@ app.get('/user-data', userAuth, async (req, res) => {
     if (name) {
       return res.status(200).json({ name });  // Google users don't have an email stored in DB
     }
+
+    return res.status(404).json({ message: "User not found" });
+
+  } catch (error) {
+    console.error("User data fetch error:", error);
+    res.status(500).json({ message: "Server Could not get user data" });
+  }
+});
+
+app.get('/get-codeforces-handle', userAuth, async (req, res) => {
+  try {
+    const { userId, name } = req.body;  // Extract from request
+
+    // If userId is a valid MongoDB ObjectId, fetch user details from DB
+    if (mongoose.Types.ObjectId.isValid(userId)) {
+      const user = await User.findById(userId);
+      if (user) {
+        const { codeforcesHandle } = user;
+        return res.status(200).json({ codeforcesHandle, userId });
+      }
+    }
+
+    // // If userId is not a valid ObjectId (Google Sign-In case), return name from token
+    // if (name) {
+    //   return res.status(200).json({ name });  // Google users don't have an email stored in DB
+    // }
 
     return res.status(404).json({ message: "User not found" });
 
@@ -774,6 +801,83 @@ app.get('/get-question-notes/:questionId', async (req, res) => {
     res.status(200).json({ notes: question.favouriteNotes || '' });
   } catch (error) {
     console.error('Error fetching notes:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/update-user-stats', userAuth, async (req, res) => {
+  try {
+    const { userId, contestId, index } = req.body;
+
+    // Fetch problem details from Codeforces API
+    const response = await axios.get(`https://codeforces.com/api/problemset.problems`);
+    const allProblems = response.data.result.problems;
+    const problem = allProblems.find(p => p.contestId === contestId && p.index === index);
+    if (!problem) {
+      return res.status(404).json({ message: 'Problem not found' });
+    }
+    const { name, rating, tags } = problem;
+    const difficulty = rating.toString();
+
+    // Check if this specific user has already solved this specific problem
+    const existingUserStats = await UserStats.findOne({ 
+      userId, 
+      solvedProblems: { 
+        $elemMatch: { contestId, index } 
+      } 
+    });
+    
+
+    if (existingUserStats) {
+      return res.status(400).json({ message: 'Problem already solved by this user' });
+    }
+
+    // Use MongoDB's increment operators and upsert to handle both new and existing users
+    const updatedUserStats = await UserStats.findOneAndUpdate(
+      { userId },
+      {
+        $inc: { 
+          [`difficultyStats.${difficulty}`]: 1,
+          totalSolved: 1 
+        },
+        $addToSet: {
+          solvedProblems: {
+            contestId,
+            index,
+            name,
+            rating,
+            tags,
+            solvedAt: new Date(),
+          },
+        }
+      },
+      { 
+        new: true,       // Return the updated document
+        upsert: true     // Create if doesn't exist
+      }
+    );
+
+    // Now handle tag stats with separate update to avoid issues with arrays as keys
+    await Promise.all(tags.map(tag => {
+      const sanitizedTag = tag.replace(/\./g, '\\.');  // Escape dots in tag names
+      return UserStats.findOneAndUpdate(
+        { userId },
+        { $inc: { [`tagStats.${sanitizedTag}`]: 1 } },
+        { new: true }
+      );
+    }));
+
+    // Get the final stats with all updates
+    const finalUserStats = await UserStats.findOne({ userId });
+    
+    res.status(200).json({ 
+      message: 'User stats updated successfully', 
+      userStats: finalUserStats,
+      newUser: !existingUserStats
+    });
+
+  } catch (error) {
+    console.error('Error updating user stats:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
