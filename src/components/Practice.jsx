@@ -9,6 +9,7 @@ function Practice() {
     const [allProblems, setAllProblems] = useState([]);
     const [filteredProblems, setFilteredProblems] = useState([]);
     const [currentPage, setCurrentPage] = useState(1);
+    const [isLoading, setIsLoading] = useState(true); // Add loading state
     const problemsPerPage = 20;
 
     const debouncedSearchValue = useDebounce(name, 500);
@@ -35,6 +36,7 @@ function Practice() {
 
     useEffect(() => {
         const fetchProblems = async () => {
+            setIsLoading(true); // Set loading to true when fetching starts
             try {
                 const response = await fetch("http://localhost:5000/codeforces-all-questions");
                 const data = await response.json();
@@ -50,6 +52,8 @@ function Practice() {
                 }
             } catch (error) {
                 console.error("Failed to fetch problems", error);
+            } finally {
+                setIsLoading(false); // Set loading to false when fetching ends
             }
         };
 
@@ -61,7 +65,7 @@ function Practice() {
 
         if (debouncedSearchValue) {
             result = result.filter(problem =>
-                problem.name.toLowerCase().includes(debouncedSearchValue.toLowerCase())
+                problem.name.toLowerCase().startsWith(debouncedSearchValue.toLowerCase())
             );
         }
 
@@ -91,6 +95,9 @@ function Practice() {
         if (rating < 2200) return "bg-orange-50 text-orange-700 border-orange-200";
         return "bg-red-50 text-red-700 border-red-200";
     };
+
+    // Check if we should show the loading spinner
+    const showLoading = isLoading && !debouncedSearchValue && selectedTags.length === 0 && !rating && currentProblems.length === 0;
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -200,11 +207,20 @@ function Practice() {
                     <div className="flex justify-between items-center mb-6">
                         <h2 className="text-xl font-semibold text-gray-800">Available Problems</h2>
                         <span className="text-sm font-medium px-3 py-1 bg-gray-100 rounded-full text-gray-600">
-                            Showing {indexOfFirstProblem + 1}-{Math.min(indexOfLastProblem, filteredProblems.length)} of {filteredProblems.length} problems
+                        {!isLoading && (
+        <span className="text-sm font-medium px-3 py-1 bg-gray-100 rounded-full text-gray-600">
+            Showing {indexOfFirstProblem + 1}-{Math.min(indexOfLastProblem, filteredProblems.length)} of {filteredProblems.length} problems
+        </span>
+    )}
                         </span>
                     </div>
                     
-                    {currentProblems.length > 0 ? (
+                    {showLoading ? (
+                        <div className="flex justify-center items-center py-20">
+                            <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-teal-500"></div>
+                            <p className="ml-4 text-gray-600 font-medium">Loading problems...</p>
+                        </div>
+                    ) : currentProblems.length > 0 ? (
                         <div className="space-y-4">
                             {currentProblems.map((problem, index) => (
                                 <div 
@@ -268,7 +284,7 @@ function Practice() {
                                 onClick={() => {
                                     setName("");
                                     setSelectedTags([]);
-                                    setRating(800);
+                                    setRating();
                                 }} 
                                 className="mt-4 text-teal-600 hover:text-teal-700 text-sm font-medium"
                             >
