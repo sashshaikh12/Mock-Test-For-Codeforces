@@ -27,7 +27,7 @@ function Navbar() {
             Practice
           </li>
         </Link>
-        <Link to="/home">
+        <Link to="/analytics">
           <li className="p-3 hover:bg-teal-700 hover:rounded-xl hover:cursor-pointer text-lg font-semibold transition-all">
             Analytics
           </li>

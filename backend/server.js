@@ -882,6 +882,28 @@ app.post('/update-user-stats', userAuth, async (req, res) => {
   }
 });
 
+app.get('/get-user-stats/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if(!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ message: 'Invalid user ID' });
+    }
+
+    // Fetch user stats from the database
+    const userStats = await UserStats.findOne({ userId });
+
+    if (!userStats) {
+      return res.status(404).json({ message: 'User stats not found' });
+    }
+
+    res.status(200).json({ message: "User stats fetched", userStats });
+  } catch (error) {
+    console.error('Error fetching user stats:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+}
+);
+
 app.listen(5000, () => {
 connectDB();
   console.log('backend Server started');
