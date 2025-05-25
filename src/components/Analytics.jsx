@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import UserPieChart from "./UserPieChart";
+import UserBarLabel from "./UserBarLabel";
 import Navbar from "./Navbar";
 
 function Analytics() {
@@ -10,6 +11,7 @@ function Analytics() {
             <p className="text-lg text-gray-700">This section will display your analytics data.</p>
             {/* Add charts, graphs, or other analytics components here */}
             <UserPieChart />
+            <UserBarLabel />
         </div>
     )
 }
