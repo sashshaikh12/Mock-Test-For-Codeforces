@@ -1,36 +1,27 @@
 import { ResponsiveBar } from '@nivo/bar'
 
 
-export default function UserBarLabel({data}) {
-    const formatLabelsData = () => {
-        if (!data?.userStats?.solvedProblems?.length) {
+export default function UserBarRatings({data}) {
+    const formatRatingsData = () => {
+        if (!data?.userStats?.difficultyStats) {
             return [];
         }
         
-        // Count occurrences of each problem index
-        const indexCounts = {};
-        
-        // Loop through all solved problems and count by index
-        data.userStats.solvedProblems.forEach(problem => {
-            const index = problem.index;
-            indexCounts[index] = (indexCounts[index] || 0) + 1;
-        });
-        
         // Convert to array format for the bar chart
         // Format: [{ index: "A", count: 3 }, { index: "B", count: 5 }, ...]
-        return Object.entries(indexCounts).map(([index, count]) => ({
-            index,
+        return Object.entries(data.userStats.difficultyStats).map(([rating, count]) => ({
+            rating,
             count
         }));
     };
 
-    const labelsData = formatLabelsData();
+    const ratingsData = formatRatingsData();
     
     const MyBar = ({ data }) => (
         <ResponsiveBar
             data={data}
             keys={['count']}
-            indexBy="index"
+            indexBy="rating"
             margin={{ top: 50, right: 50, bottom: 50, left: 60 }}
             padding={0.3}
             valueScale={{ type: 'linear' }}
@@ -39,7 +30,7 @@ export default function UserBarLabel({data}) {
                 tickSize: 5,
                 tickPadding: 5,
                 tickRotation: 0,
-                legend: 'Problem Index',
+                legend: 'Problem Rating',
                 legendPosition: 'middle',
                 legendOffset: 32
             }}
@@ -63,9 +54,9 @@ export default function UserBarLabel({data}) {
     return(
         <div className='h-[400px] w-full'>
             <h2 className="text-xl font-semibold mb-2">Problems Solved by Index</h2>
-            {labelsData.length > 0 ? (
+            {ratingsData.length > 0 ? (
                 <div className="h-[350px]">
-                    <MyBar data={labelsData} />
+                    <MyBar data={ratingsData} />
                 </div>
             ) : (
                 <div className="flex items-center justify-center h-full bg-gray-50 rounded-lg border border-gray-200">
