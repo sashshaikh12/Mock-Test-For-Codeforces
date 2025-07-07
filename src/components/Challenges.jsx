@@ -23,7 +23,6 @@ function Challenges() {
             credentials: "include",
           });
           result = await result.json();
-          console.log(result);
             if (!result.success) {
                 console.error("Failed to fetch daily problem:", result.message);
             }
@@ -38,6 +37,16 @@ function Challenges() {
         };  
         fetchRandomProblem();
       }, []);
+
+      useEffect(() => {
+
+        if(!ContestID || !index) 
+        {
+            return;
+        }
+        handleAccepted();
+
+      }, [ContestID, index]);
 
 
       const fetchFavourites = async (contestId, problemIndex) => {
@@ -162,7 +171,7 @@ function Challenges() {
                 // Now fetch test history with userId
                 if (userData.codeforcesHandle) {
                     setHandle(userData.codeforcesHandle);
-                    await fetchLastSubmission(userData.codeforcesHandle);
+                    await fetchIsDailySolved(userData.codeforcesHandle);
                 }
             } catch (err) {
                 setError(err.message);
@@ -173,9 +182,9 @@ function Challenges() {
         fetchHandle();
       };
 
-      const fetchLastSubmission = async (handle) => {
+      const fetchIsDailySolved = async (handle) => {
         try {
-            const response = await fetch("http://localhost:5000/last-submission", {
+            const response = await fetch("http://localhost:5000/isDailySolved", {
                 method: "post",
                 credentials: "include",
                 headers: {
@@ -183,56 +192,47 @@ function Challenges() {
                 },
                 body: JSON.stringify({
                     handle: handle,
+                    contestId: ContestID,
+                    index: index,
                 }),
             });
             
             if (response.status !== 200) {
-                throw new Error("Failed to fetch last submission");
+                throw new Error("Failed to fetch daily solved status");
             }
             
             const data = await response.json();
             
-            if (data && data.submission) {
-                if(data.submission.problem.contestId === ContestID && data.submission.problem.index === index) {
-                    if(data.submission.verdict === "OK") {
-                        setdailySolved(true);
-                        const response = await fetch("http://localhost:5000/update-user-stats", {
-                            method: "post",
-                            credentials: "include",
-                            headers: {
-                                "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({
-                                contestId: ContestID,
-                                index: index,
-                            }),
-                        });
-
-                        if(response.status === 400) {
-                            alert("This problem is already solved.");
-                            return;
-                        }
-
-                        if (response.status !== 200) {
-                            throw new Error("Failed to update solved problems");
-                        }
-    
-                        alert("Congrats on Solving the question!");
-                    }
-                    else
-                    {
-                        alert("Your Last Submission was not Accepted on this Problem!");
-                    }
+            if (data && data.dailySolved !== undefined) {
+                if(data.dailySolved) {
+                    setdailySolved(true);
+                    const response = await fetch("http://localhost:5000/update-user-stats", {
+                        method: "post",
+                        credentials: "include",
+                        headers: {
+                            "Content-Type": "application/json",
+                        },
+                        body: JSON.stringify({
+                            contestId: ContestID,
+                            index: index,
+                        }),
+                    });
+                    
+                    
+                    if (response.status !== 200) {
+                        throw new Error("Failed to update solved problems");
+                    }   
+                    
                 }
                 else{
-                    alert("Your Last Submission was not Accepted on this Problem!");
+                    setdailySolved(false);
                 }
             }
             else {
-                console.log("error fetching data details.");
+                console.log("error fetching dailyProblem details.");
             }
         } catch (error) {
-            console.error("Error fetching last submission:", error);
+            console.error("Error fetching dailyProblem status:", error);
         }
     }
 
@@ -247,7 +247,13 @@ function Challenges() {
             {/* Challenges Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 {/* Daily Challenge Card */}
-                <div className="bg-white rounded-xl shadow-lg overflow-hidden border border-blue-100 hover:shadow-xl transition-shadow duration-300">
+                <div
+                    className={`rounded-xl shadow-lg overflow-hidden border transition-shadow duration-300 ${
+                        dailySolved
+                            ? "bg-green-100 border-green-500 hover:shadow-lg"
+                            : "bg-white border-blue-100 hover:shadow-xl"
+                    }`}
+                >
                     <div className="p-6">
                         <div className="flex items-center mb-4">
                             <div className="bg-blue-100 p-3 rounded-full mr-4">
@@ -280,17 +286,7 @@ function Challenges() {
                         <button onClick = {handleDailyChallenge}  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition duration-300 hover:cursor-pointer">
                             Start Today's Challenge
                         </button>
-                        <button 
-                            onClick={handleAccepted}  
-                            disabled={dailySolved}
-                            className={`w-full font-medium mt-4 py-2 px-4 rounded-lg transition duration-300 ${
-                                dailySolved 
-                                    ? "bg-gray-400 cursor-not-allowed opacity-70 text-white" 
-                                    : "bg-emerald-500 hover:bg-emerald-600 text-white hover:cursor-pointer"
-                            }`}
-                        >
-                            {dailySolved ? "Already Solved!" : "Accepted"}
-                        </button>
+                        
                     </div>
                 </div>
 

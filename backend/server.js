@@ -212,11 +212,6 @@ app.get('/get-codeforces-handle', userAuth, async (req, res) => {
       }
     }
 
-    // // If userId is not a valid ObjectId (Google Sign-In case), return name from token
-    // if (name) {
-    //   return res.status(200).json({ name });  // Google users don't have an email stored in DB
-    // }
-
     return res.status(404).json({ message: "User not found" });
 
   } catch (error) {
@@ -829,7 +824,7 @@ app.post('/update-user-stats', userAuth, async (req, res) => {
     
 
     if (existingUserStats) {
-      return res.status(400).json({ message: 'Problem already solved by this user' });
+      return res.status(200).json({ message: 'Problem already solved by this user' });
     }
 
     // Use MongoDB's increment operators and upsert to handle both new and existing users
@@ -903,6 +898,40 @@ app.get('/get-user-stats/:userId', async (req, res) => {
   }
 }
 );
+
+app.post('/isDailySolved', async (req, res) => {
+  try{
+    const {handle , contestId, index} = req.body;
+    const systemDate = new Date();
+    systemDate.setHours(0, 0, 0, 0); // Set time to 00:00:00
+    const utcTimestamp = Math.floor(systemDate.getTime() / 1000);
+    console.log(utcTimestamp);
+    const CheckHandle = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
+    if (CheckHandle.data.status === "FAILED") {
+      return res.status(400).json({ message: "Invalid Codeforces handle" });
+    }
+    const response = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}`);
+    if(!response.data.result || response.data.result.length === 0) {
+      return res.status(404).json({ message: "No submissions found for this user" });
+    }
+    const submissions = response.data.result;
+    const dailySolved = submissions.some(submission => {
+      return submission.problem.contestId === contestId &&
+             submission.problem.index === index &&
+             submission.creationTimeSeconds >= utcTimestamp &&
+             submission.verdict === 'OK';
+    });
+    
+    if(dailySolved){
+      return res.status(200).json({message: "Daily question solved", dailySolved: true});
+    }else{
+      return res.status(200).json({message: "Daily question not solved", dailySolved: false});
+    }
+
+  }catch(error){
+    res.status(500).json({ message: 'Server error in Checking dailySolved' });
+  }
+});
 
 app.listen(5000, () => {
 connectDB();
