@@ -90,16 +90,40 @@ function Analytics() {
     }
 
     return (
-        <div>
-            <Navbar />
-            <h1 className="text-3xl font-bold mb-4">Analytics Dashboard</h1>
-            <p className="text-lg text-gray-700">This section will display your analytics data.</p>
-            {/* Add charts, graphs, or other analytics components here */}
-            {data && <UserPieChart data = {data} />}
-            {data && <UserBarLabel data = {data} />}
-            {data && <UserBarRatings data = {data} />}
+    <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <h1 className="text-3xl font-bold text-gray-800 mb-6 text-center">
+                Analytics Dashboard
+            </h1>
+            <p className="text-lg text-gray-600 mb-8 text-center">
+                This section displays your analytics data.
+            </p>
+
+            {/* Stacked Layout for Analytics Components */}
+            <div className="space-y-8">
+                {data && (
+                    <div className="bg-white shadow-md rounded-lg p-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Pie Chart</h2>
+                        <UserPieChart data={data} />
+                    </div>
+                )}
+                {data && (
+                    <div className="bg-white shadow-md rounded-lg p-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Bar Chart (Labels)</h2>
+                        <UserBarLabel data={data} />
+                    </div>
+                )}
+                {data && (
+                    <div className="bg-white shadow-md rounded-lg p-6">
+                        <h2 className="text-xl font-semibold text-gray-800 mb-4">Bar Chart (Ratings)</h2>
+                        <UserBarRatings data={data} />
+                    </div>
+                )}
+            </div>
         </div>
-    )
+    </div>
+);
 }
 
 export default Analytics;
