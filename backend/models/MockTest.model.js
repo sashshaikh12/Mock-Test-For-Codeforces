@@ -17,6 +17,7 @@ const mockTestSchema = mongoose.Schema({
       }],
     shareableLink: { type: String, index: true, unique: true },
     testNotes: String,
+    startTime: { type: Date, default: Date.now },
 });
 
 const MockTest = mongoose.model("MockTest", mockTestSchema);

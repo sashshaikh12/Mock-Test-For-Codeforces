@@ -459,6 +459,7 @@ app.post("/get-token", async (req, res) => {
 app.post("/test-questions", testAuth, async (req, res) => {
   
   const {selectedTags, lowerBound, upperBound, problems, userId, testId} = req.body;
+  const date = new Date();
 
   try {
     // Handle existing test from testId (page refresh case)
@@ -562,7 +563,8 @@ app.post("/test-questions", testAuth, async (req, res) => {
         difficulty: question.rating,
         tags: question.tags
       })),
-      responses: [] // Empty initially
+      responses: [], // Empty initially,
+      startTime: date,
     });
 
     const savedTest = await newTest.save();
@@ -905,7 +907,6 @@ app.post('/isDailySolved', async (req, res) => {
     const systemDate = new Date();
     systemDate.setHours(0, 0, 0, 0); // Set time to 00:00:00
     const utcTimestamp = Math.floor(systemDate.getTime() / 1000);
-    console.log(utcTimestamp);
     const CheckHandle = await axios.get(`https://codeforces.com/api/user.info?handles=${handle}`);
     if (CheckHandle.data.status === "FAILED") {
       return res.status(400).json({ message: "Invalid Codeforces handle" });
@@ -929,7 +930,49 @@ app.post('/isDailySolved', async (req, res) => {
     }
 
   }catch(error){
-    res.status(500).json({ message: 'Server error in Checking dailySolved' });
+    res.status(500).json({   message: 'Server error in Checking dailySolved' });
+  }
+});
+
+app.post('/areTestQuestionsSolved', testAuth, async (req, res) => {
+  try {
+    const { handle, testId } = req.body;
+
+    // Fetch the test from MongoDB
+    const test = await MockTest.findById(testId);
+    if (!test) {
+      return res.status(404).json({ message: 'Test not found' });
+    }
+
+    const testStartTime = test.startTime;
+    const utcTimestamp = Math.floor(testStartTime.getTime() / 1000);
+
+    // Fetch user submissions from Codeforces API
+    const response = await axios.get(`https://codeforces.com/api/user.status?handle=${handle}`);
+    if (response.data.status !== 'OK' || !response.data.result || response.data.result.length === 0) {
+      return res.status(200).json({ message: "No submissions found for this user" });
+    }
+
+    // Filter for successful submissions after the test started
+    const successfulSubmissions = new Set(
+      response.data.result
+        .filter(submission => submission.verdict === 'OK' && submission.creationTimeSeconds >= utcTimestamp)
+        .map(submission => `${submission.problem.contestId}-${submission.problem.index}`)
+    );
+
+    // Check each question in the test
+    const results = test.questions.map(question => {
+      const questionId = `${question.contestId}-${question.index}`;
+      return {
+        questionId: question._id,
+        solved: successfulSubmissions.has(questionId)
+      };
+    });
+
+    res.status(200).json({ message: "Test questions solved status fetched", results });
+  } catch (error) {
+    console.error('Error checking test questions solved:', error);
+    res.status(500).json({ message: 'Server error in Checking test questions solved' });
   }
 });
 

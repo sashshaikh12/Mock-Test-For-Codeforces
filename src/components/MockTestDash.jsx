@@ -74,6 +74,7 @@ function MockTestDashboard() {
         }
         
         const data = await result.json();
+        console.log(data);  
         
         if(data.message === "Not enough problems found") {
           alert("Not enough problems exist with the given inputs");
@@ -81,15 +82,57 @@ function MockTestDashboard() {
           return;
         }
 
-        let id = 0;
+        const response = await fetch("http://localhost:5000/get-codeforces-handle", {
+                    method: "get",
+                    credentials: "include",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                });
+                
+                if (response.status !== 200) {
+                    throw new Error("Failed to fetch codeforces handle");
+                }
+                
+                const handleData = await response.json();
+                console.log("handleData", handleData);
   
-        const testsWithStatus = data.testQuestions.map(test => ({
-          ...test,
-          accepted: false,
-          id: id++,
-        }));
-        
-        setCompletedTests(testsWithStatus); 
+                if (!handleData || !handleData.codeforcesHandle) {
+                    console.log("handle not received.");
+                    return;
+                }
+
+        let solvedQuestions = await fetch("http://localhost:5000/areTestQuestionsSolved", {
+          method: "post",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ 
+            handle: handleData.codeforcesHandle,
+          }),
+        });
+
+        if (solvedQuestions.status !== 200) {
+          throw new Error("Failed to fetch solved questions");
+        }
+        solvedQuestions = await solvedQuestions.json();
+        console.log("solvedQuestions", solvedQuestions);
+
+        let id = 0;
+
+        // Map test questions and update the `accepted` status based on `solvedQuestions.results`
+        const testsWithStatus = data.testQuestions.map((test, index) => {
+          const solvedStatus = solvedQuestions.results[index]?.solved; // Get the solved status for the corresponding question
+
+          return {
+            ...test,
+            accepted: solvedStatus || false, // Set `accepted` based on `solved`
+            id: id++,
+          };
+        });
+
+        setCompletedTests(testsWithStatus);
       } catch (error) {
         console.error("Fetch error:", error);
         alert("Failed to load test questions");
@@ -102,13 +145,13 @@ function MockTestDashboard() {
     fetchCompletedTests();
   }, [navigate, selectedTags, lowerBound, upperBound, timeLimit]);
 
-  const markAsAccepted = (id) => {
-    setCompletedTests(prev => 
-      prev.map(test => 
-        test.id === id ? {...test, accepted: true} : test
-      )
-    );
-  };
+  // const markAsAccepted = (id) => {
+  //   setCompletedTests(prev => 
+  //     prev.map(test => 
+  //       test.id === id ? {...test, accepted: true} : test
+  //     )
+  //   );
+  // };
 
   const handleEndTest = async () => {
     try {
@@ -173,14 +216,7 @@ function MockTestDashboard() {
                     </div>
                     
                     <div className="flex space-x-2">
-                      {!test.accepted && (
-                        <button 
-                          onClick={() => markAsAccepted(test.id)}
-                          className="px-4 py-2 bg-green-600 text-white text-sm rounded-md hover:bg-green-700 transition-colors hover:cursor-pointer"
-                        >
-                          Mark Accepted
-                        </button>
-                      )}
+          
                       <a 
                         href={`https://codeforces.com/contest/${test.contestId}/problem/${test.index}`}
                         target="_blank"
