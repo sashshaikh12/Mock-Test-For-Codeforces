@@ -148,47 +148,84 @@ function MockTestDashboard() {
 
 
   const handleEndTest = async () => {
-    try {
-      console.log("Starting handleEndTest...");
-      // Prepare the data for all questions
-      const questionsData = completedTests
-    .filter((test) => test.accepted) // Only include tests where accepted is true
-    .map((test) => ({
-      contestId: test.contestId,
-      index: test.index,
-    }));
-    console.log("Questions data being sent to update-user-stats:", questionsData);
+  try {
+    // Re-fetch the solved status of the test questions
+    const response = await fetch("http://localhost:5000/get-codeforces-handle", {
+      method: "get",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
 
-    // Send a single request to update user stats for all questions
-    const resp = await fetch('http://localhost:5000/update-user-stats', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({problems: questionsData }),
+    if (response.status !== 200) {
+      throw new Error("Failed to fetch Codeforces handle");
+    }
+
+    const handleData = await response.json();
+    const solvedQuestionsResponse = await fetch("http://localhost:5000/areTestQuestionsSolved", {
+      method: "post",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        handle: handleData.codeforcesHandle,
+      }),
+    });
+
+    if (solvedQuestionsResponse.status !== 200) {
+      throw new Error("Failed to fetch solved questions");
+    }
+
+    const solvedQuestions = await solvedQuestionsResponse.json();
+
+    // Update the `completedTests` state with the latest solved status
+    const updatedTests = completedTests.map((test, index) => ({
+      ...test,
+      accepted: solvedQuestions.results[index]?.solved || false,
+    }));
+
+    setCompletedTests(updatedTests);
+
+    // Prepare the data for all solved questions
+    const questionsData = updatedTests
+      .filter((test) => test.accepted)
+      .map((test) => ({
+        contestId: test.contestId,
+        index: test.index,
+      }));
+
+
+    // Send a single request to update user stats for all solved questions
+    const resp = await fetch("http://localhost:5000/update-user-stats", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      body: JSON.stringify({ problems: questionsData }),
     });
 
     if (resp.status !== 200) {
-      throw new Error('Failed to update user stats');
+      throw new Error("Failed to update user stats");
     }
 
-    let data = await resp.json();
+    const data = await resp.json();
     console.log("User stats updated successfully:", data);
 
-   
+    // Submit the test and navigate to the report link
+    const submitResponse = await fetch("http://localhost:5000/submit-test", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+    });
 
-      const response = await fetch('http://localhost:5000/submit-test', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include'
-      });
-  
-      const { reportLink } = await response.json();
-      console.log("Report link received:", reportLink);
-      window.location.replace(reportLink);
-    } catch (error) {
-      console.error('Submission error:', error);
-    }
-  };
+    const { reportLink } = await submitResponse.json();
+    console.log(reportLink);
+    window.location.replace(reportLink);
+  } catch (error) {
+    console.error("Submission error:", error);
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
