@@ -170,102 +170,111 @@ function TestReport() {
 
 
     if (showDetails && selectedQuestion) {
-        return (
-            <div className="max-w-4xl mx-auto my-8 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
+    return (
+        <div className="flex justify-center items-center min-h-screen bg-gray-100">
+            <div className="max-w-4xl w-full mx-auto my-8 p-6 bg-white rounded-lg shadow-lg border border-gray-200">
+                {/* Header Section */}
                 <div className="flex justify-between items-center mb-6">
                     <div>
                         <h2 className="text-2xl font-bold text-gray-800">{selectedQuestion.title}</h2>
-                        <p className="text-gray-500">Problem {testData.findIndex(q => q.id === selectedQuestion.id) + 1} of {testData.length}</p>
+                        <p className="text-sm text-gray-500">
+                            Problem {testData.findIndex(q => q.id === selectedQuestion.id) + 1} of {testData.length}
+                        </p>
                     </div>
-                    <button 
+                    <button
                         onClick={handleCloseDetails}
                         className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors border border-gray-300 hover:cursor-pointer"
                     >
                         ← Back to Report
                     </button>
                 </div>
-                
-                <div className="grid md:grid-cols-2 gap-6 mb-8">
+
+                {/* Details Section */}
+                <div className="grid md:grid-cols-2 gap-6">
                     {/* Question Metadata */}
                     <div className="bg-gray-50 p-6 rounded-lg border border-gray-200">
-                        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">Question Details</h3>
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                            Question Details
+                        </h3>
                         <div className="space-y-4">
+                            {/* Difficulty */}
                             <div className="flex justify-between">
                                 <span className="font-medium text-gray-700">Difficulty:</span>
-                                <span className="text-gray-600 capitalize">{selectedQuestion.difficulty || 'Not specified'}</span>
+                                <span className="text-gray-600 capitalize">
+                                    {selectedQuestion.difficulty || 'Not specified'}
+                                </span>
                             </div>
+
+                            {/* Status */}
                             <div className="flex justify-between">
                                 <span className="font-medium text-gray-700">Status:</span>
-                                <span className={`font-medium ${selectedQuestion.correct ? 'text-green-600' : 'text-red-600'}`}>
+                                <span
+                                    className={`font-medium ${
+                                        selectedQuestion.correct ? 'text-green-600' : 'text-red-600'
+                                    }`}
+                                >
                                     {selectedQuestion.correct ? 'Solved' : 'Not solved'}
                                 </span>
                             </div>
-                            <div className="flex justify-between">
-                                <span className="font-medium text-gray-700">Time Spent:</span>
-                                <span className="text-gray-600">
-                                    {selectedQuestion.time_taken ? `${selectedQuestion.time_taken} mins` : 'N/A'}
-                                </span>
-                            </div>
+
+                            {/* Tags */}
                             <div className="flex justify-between items-start">
                                 <span className="font-medium text-gray-700">Tags:</span>
                                 <div className="flex flex-wrap justify-end gap-1 max-w-xs">
                                     {selectedQuestion.tags?.map(tag => (
-                                        <span key={tag} className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded">
+                                        <span
+                                            key={tag}
+                                            className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded"
+                                        >
                                             {tag}
                                         </span>
                                     )) || 'None'}
                                 </div>
                             </div>
+
+                            {/* Most Relevant Tag */}
+                            <div className="flex justify-between">
+                                <span className="font-medium text-gray-700">Total Attempts:</span>
+                                <span className="text-gray-600">
+                                    4
+                                </span>
+                            </div>
                         </div>
                     </div>
 
-                    {/* Performance Analysis */}
-                    <div className="bg-blue-50 p-6 rounded-lg border border-blue-100">
-                        <h3 className="text-lg font-semibold text-blue-800 mb-4 pb-2 border-b border-blue-200">Performance Analysis</h3>
+                    {/* Action Buttons */}
+                    <div className="bg-gray-50 p-6 rounded-lg border border-gray-200 flex flex-col justify-between">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-4 pb-2 border-b border-gray-200">
+                            Actions
+                        </h3>
                         <div className="space-y-4">
-                            {selectedQuestion.correct ? (
-                                <>
-                                    <p className="text-green-700">
-                                        <span className="font-semibold">Good work!</span> You solved this problem correctly in {selectedQuestion.time_taken || 'unknown'} minutes.
-                                    </p>
-                                    <p className="text-gray-700">
-                                        Consider reviewing similar problems to reinforce your understanding of these concepts:
-                                    </p>
-                                    <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                                        <li>Practice more {selectedQuestion.difficulty}-level problems</li>
-                                        <li>Explore variations of this problem type</li>
-                                        <li>Review time optimization techniques</li>
-                                    </ul>
-                                </>
-                            ) : (
-                                <>
-                                    <p className="text-red-700">
-                                        <span className="font-semibold">Let's improve:</span> You didn't solve this problem correctly.
-                                    </p>
-                                    <p className="text-gray-700">
-                                        Here's how you can strengthen your skills in this area:
-                                    </p>
-                                    <ul className="list-disc pl-5 text-gray-700 space-y-1">
-                                        <li>Study the problem's editorial solution</li>
-                                        <li>Practice fundamental concepts related to this problem</li>
-                                        <li>Attempt similar problems with gradual difficulty increase</li>
-                                    </ul>
-                                </>
-                            )}
-                            <a 
+                            <a
                                 href={`https://codeforces.com/contest/${selectedQuestion.contestId}/problem/${selectedQuestion.index}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="inline-block mt-2 text-blue-600 hover:underline font-medium"
+                                className="block w-full text-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                             >
-                                View editorial on Codeforces →
+                                View Question
                             </a>
+                            <button
+                                onClick={(e) => toggleFavorite(selectedQuestion, e)}
+                                className={`block w-full text-center px-4 py-2 rounded-md transition-colors ${
+                                    favoriteMap[`${selectedQuestion.contestId}-${selectedQuestion.index}`]
+                                        ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200'
+                                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                }`}
+                            >
+                                {favoriteMap[`${selectedQuestion.contestId}-${selectedQuestion.index}`]
+                                    ? 'Remove from Favorites'
+                                    : 'Add to Favorites'}
+                            </button>
                         </div>
                     </div>
                 </div>
             </div>
-        );
-    }
+        </div>
+    );
+}
 
     return (
         <div className="max-w-4xl mx-auto my-8 p-6 bg-white rounded-lg shadow-sm border border-gray-100">
@@ -281,9 +290,9 @@ function TestReport() {
             {/* Overall Stats */}
             <div className="grid md:grid-cols-3 gap-4 mb-8">
                 <div className="bg-indigo-50 p-4 rounded-lg border border-indigo-100 shadow-sm">
-                    <h3 className="text-sm font-medium text-indigo-800 uppercase tracking-wider">Score</h3>
+                    <h3 className="text-sm font-medium text-indigo-800 uppercase tracking-wider">Average Difficulty</h3>
                     <p className="text-3xl font-bold text-indigo-600 mt-1">
-                        50%
+                        850
                     </p>
                 </div>
                 <div className="bg-green-50 p-4 rounded-lg border border-green-100 shadow-sm">
@@ -299,42 +308,6 @@ function TestReport() {
                     </p>
                 </div>
             </div>
-
-            {/* Bar Chart for time taken per question */}
-
-            {data.length > 0 ? (
-                <div style={{ width: '100%', height: '300px' }} className="my-16">
-                    <ResponsiveContainer>
-                        {/* Chart code here */}
-                        <BarChart
-                            data={data}
-                            margin={{
-                                top: 5,
-                                right: 30,
-                                left: 20,
-                                bottom: 5,
-                            }}
-                            >
-                            <XAxis 
-                                dataKey="name" 
-                                scale="point" 
-                                padding={{ left: 50, right: 10 }}
-                                angle={-45} // Angle the labels
-                                textAnchor="end" // Align angled text better
-                                height={60} // Give more room for angled labels
-                                tick={{ fontSize: 12 }} // Smaller font on mobile
-                            />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend wrapperStyle={{ fontSize: '12px' }} />
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <Bar dataKey="Time_Taken" fill="#8884d8" background={{ fill: '#9933ff' }} maxBarSize={50} />
-                        </BarChart>
-                    </ResponsiveContainer>
-                </div>
-            ) : (
-                <p className="text-gray-500 text-center">No time data available for chart</p>
-            )}
 
             {/* Questions List */}
             {testData && (
