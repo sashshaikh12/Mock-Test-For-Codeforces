@@ -14,6 +14,7 @@ function MockTestDashboard() {
     const fetchCompletedTests = async () => {
       try {
         setIsLoading(true);
+        console.log("i am fucking here");
         
         // Check if we have all the required parameters to start a test
         if (!selectedTags || !lowerBound || !upperBound) {
@@ -143,18 +144,38 @@ function MockTestDashboard() {
     };
     
     fetchCompletedTests();
-  }, [navigate, selectedTags, lowerBound, upperBound, timeLimit]);
+  }, [selectedTags, lowerBound, upperBound, timeLimit, navigate]);
 
-  // const markAsAccepted = (id) => {
-  //   setCompletedTests(prev => 
-  //     prev.map(test => 
-  //       test.id === id ? {...test, accepted: true} : test
-  //     )
-  //   );
-  // };
 
   const handleEndTest = async () => {
     try {
+      console.log("Starting handleEndTest...");
+      // Prepare the data for all questions
+      const questionsData = completedTests
+    .filter((test) => test.accepted) // Only include tests where accepted is true
+    .map((test) => ({
+      contestId: test.contestId,
+      index: test.index,
+    }));
+    console.log("Questions data being sent to update-user-stats:", questionsData);
+
+    // Send a single request to update user stats for all questions
+    const resp = await fetch('http://localhost:5000/update-user-stats', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({problems: questionsData }),
+    });
+
+    if (resp.status !== 200) {
+      throw new Error('Failed to update user stats');
+    }
+
+    let data = await resp.json();
+    console.log("User stats updated successfully:", data);
+
+   
+
       const response = await fetch('http://localhost:5000/submit-test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,8 +183,8 @@ function MockTestDashboard() {
       });
   
       const { reportLink } = await response.json();
-      console.log(reportLink);
-      navigate(reportLink, {replace: true}); // Redirect to token-based URL
+      console.log("Report link received:", reportLink);
+      window.location.replace(reportLink);
     } catch (error) {
       console.error('Submission error:', error);
     }

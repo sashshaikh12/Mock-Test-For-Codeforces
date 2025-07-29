@@ -12,8 +12,7 @@ const mockTestSchema = mongoose.Schema({
     responses: [{
         contestId: String,
         index: String,
-        status: String, // "AC", "WA", "TLE", etc.
-        timeTaken: Number, // in seconds
+        status: String, // solved or not solved.
       }],
     shareableLink: { type: String, index: true, unique: true },
     testNotes: String,

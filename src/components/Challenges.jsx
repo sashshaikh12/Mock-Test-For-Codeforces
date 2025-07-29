@@ -213,8 +213,12 @@ function Challenges() {
                             "Content-Type": "application/json",
                         },
                         body: JSON.stringify({
-                            contestId: ContestID,
-                            index: index,
+                            problems: [
+                            {
+                                contestId: ContestID,
+                                index: index,
+                            },
+                        ],
                         }),
                     });
                     

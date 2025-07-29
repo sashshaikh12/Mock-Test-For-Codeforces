@@ -1,5 +1,5 @@
 import { React, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { replace, useNavigate } from "react-router-dom";
 
 function MockTestSetup() {
 
@@ -275,7 +275,7 @@ function MockTestSetup() {
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
           disabled={!isFormValid()}
-          onClick = {() => navigate('/mock-test-dashboard', {state: {selectedTags, lowerBound, upperBound, timeLimit}})}
+          onClick = {() => navigate('/mock-test-dashboard', { state: { selectedTags, lowerBound, upperBound, timeLimit }})}
         >
           Start Mock Test
         </button>

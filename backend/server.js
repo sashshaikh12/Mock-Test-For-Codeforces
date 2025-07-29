@@ -458,7 +458,7 @@ app.post("/get-token", async (req, res) => {
 
 app.post("/test-questions", testAuth, async (req, res) => {
   
-  const {selectedTags, lowerBound, upperBound, problems, userId, testId} = req.body;
+  const {selectedTags, lowerBound, upperBound, timeLimit, userId, testId} = req.body;
   const date = new Date();
 
   try {
@@ -804,75 +804,88 @@ app.get('/get-question-notes/:questionId', async (req, res) => {
 
 app.post('/update-user-stats', userAuth, async (req, res) => {
   try {
-    const { userId, contestId, index } = req.body;
+    const { userId, problems } = req.body; // Expect an array of problems in the request body
 
-    // Fetch problem details from Codeforces API
+
+    if (!problems || !Array.isArray(problems) || problems.length === 0) {
+      return res.status(200).json({ message: 'No problems provided' });
+    }
+
+    // Fetch all problems from Codeforces API once
     const response = await axios.get(`https://codeforces.com/api/problemset.problems`);
     const allProblems = response.data.result.problems;
-    const problem = allProblems.find(p => p.contestId === contestId && p.index === index);
-    if (!problem) {
-      return res.status(404).json({ message: 'Problem not found' });
-    }
-    const { name, rating, tags } = problem;
-    const difficulty = rating.toString();
 
-    // Check if this specific user has already solved this specific problem
-    const existingUserStats = await UserStats.findOne({ 
-      userId, 
-      solvedProblems: { 
-        $elemMatch: { contestId, index } 
-      } 
-    });
-    
-
-    if (existingUserStats) {
-      return res.status(200).json({ message: 'Problem already solved by this user' });
-    }
-
-    // Use MongoDB's increment operators and upsert to handle both new and existing users
-    const updatedUserStats = await UserStats.findOneAndUpdate(
-      { userId },
-      {
-        $inc: { 
-          [`difficultyStats.${difficulty}`]: 1,
-          totalSolved: 1 
-        },
-        $addToSet: {
-          solvedProblems: {
-            contestId,
-            index,
-            name,
-            rating,
-            tags,
-            solvedAt: new Date(),
-          },
-        }
-      },
-      { 
-        new: true,       // Return the updated document
-        upsert: true     // Create if doesn't exist
+    // Process each problem in the array
+    for (const { contestId, index } of problems) {
+      const problem = allProblems.find(p => p.contestId === Number(contestId) && p.index === index);
+      if (!problem) {
+        //console.warn(`Problem not found: ContestId ${contestId}, Index ${index}`);
+        continue; // Skip this problem if not found
       }
-    );
 
-    // Now handle tag stats with separate update to avoid issues with arrays as keys
-    await Promise.all(tags.map(tag => {
-      const sanitizedTag = tag.replace(/\./g, '\\.');  // Escape dots in tag names
-      return UserStats.findOneAndUpdate(
+      const { name, rating, tags } = problem;
+      const difficulty = rating.toString();
+      //console.log(`Processing problem: ContestId ${contestId}, Index ${index}, Name: ${name}, Rating: ${rating}, Tags: ${tags}`);
+
+      // Check if the user has already solved this problem
+      const existingUserStats = await UserStats.findOne({
+        userId,
+        solvedProblems: {
+          $elemMatch: { contestId, index },
+        },
+      });
+
+      if (existingUserStats) {
+        // console.log(`Problem already solved by user: ContestId ${contestId}, Index ${index}`);
+        continue; // Skip this problem if already solved
+      }
+
+      // Update user stats for the problem
+      await UserStats.findOneAndUpdate(
         { userId },
-        { $inc: { [`tagStats.${sanitizedTag}`]: 1 } },
-        { new: true }
+        {
+          $inc: {
+            [`difficultyStats.${difficulty}`]: 1,
+            totalSolved: 1,
+          },
+          $addToSet: {
+            solvedProblems: {
+              contestId,
+              index,
+              name,
+              rating,
+              tags,
+              solvedAt: new Date(),
+            },
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+        }
       );
-    }));
 
-    // Get the final stats with all updates
+      // Update tag stats
+      await Promise.all(
+        tags.map((tag) => {
+          const sanitizedTag = tag.replace(/\./g, '\\.'); // Escape dots in tag names
+          return UserStats.findOneAndUpdate(
+            { userId },
+            { $inc: { [`tagStats.${sanitizedTag}`]: 1 } },
+            { new: true }
+          );
+        })
+      );
+    }
+
+    // Fetch the final updated stats
     const finalUserStats = await UserStats.findOne({ userId });
-    
-    res.status(200).json({ 
-      message: 'User stats updated successfully', 
-      userStats: finalUserStats,
-      newUser: !existingUserStats
-    });
+    //console.log("Final user stats:", finalUserStats);
 
+    res.status(200).json({
+      message: 'User stats updated successfully',
+      userStats: finalUserStats,
+    });
   } catch (error) {
     console.error('Error updating user stats:', error);
     res.status(500).json({ message: 'Server error' });
